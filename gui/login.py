@@ -19,8 +19,8 @@ class LoginWindow(QWidget):
         self.max_attempts = 5
         self.is_locked = False
         
-        self.setWindowTitle("Cryptex - Login")
-        self.setFixedSize(400, 500)
+        self.setWindowTitle("Cryptex - Secure Login")
+        self.setFixedSize(450, 550)
         
         # Apply theme
         current_theme = settings.get("theme", "dark_red")
@@ -31,13 +31,13 @@ class LoginWindow(QWidget):
     
     def setup_ui(self):
         main_layout = QVBoxLayout()
-        main_layout.setContentsMargins(20, 20, 20, 20)
+        main_layout.setContentsMargins(30, 30, 30, 30)
         
         # Main container
         container = QFrame()
         container.setObjectName("card")
         layout = QVBoxLayout(container)
-        layout.setSpacing(20)
+        layout.setSpacing(25)
         
         # Header
         self.setup_header(layout)
@@ -59,19 +59,21 @@ class LoginWindow(QWidget):
         # Logo/Icon
         logo = QLabel("🔐")
         logo.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        logo.setStyleSheet("font-size: 48px; margin: 10px;")
+        logo.setStyleSheet("font-size: 64px; margin: 15px;")
         header_layout.addWidget(logo)
         
         # Title
         title = QLabel("CRYPTEX")
         title.setObjectName("title")
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        title.setStyleSheet("font-size: 32px; font-weight: bold; margin: 10px;")
         header_layout.addWidget(title)
         
         # Subtitle
         subtitle = QLabel("Secure Note Manager")
         subtitle.setObjectName("subtitle")
         subtitle.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        subtitle.setStyleSheet("font-size: 18px; margin-bottom: 20px;")
         header_layout.addWidget(subtitle)
         
         layout.addLayout(header_layout)
@@ -79,43 +81,58 @@ class LoginWindow(QWidget):
     def setup_login_form(self, layout):
         """Setup login form"""
         form_layout = QVBoxLayout()
-        form_layout.setSpacing(15)
+        form_layout.setSpacing(20)
         
         # Status label
         self.status_label = QLabel()
         self.status_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.status_label.setStyleSheet("color: #ff6666; font-weight: bold;")
+        self.status_label.setStyleSheet("color: #ff6666; font-weight: bold; min-height: 20px;")
         form_layout.addWidget(self.status_label)
         
-        # PIN input
+        # PIN input section
+        pin_section = QVBoxLayout()
+        pin_section.setSpacing(10)
+        
         self.pin_label = QLabel("Enter PIN" if pin_exists() else "Create a new PIN")
         self.pin_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        form_layout.addWidget(self.pin_label)
+        self.pin_label.setStyleSheet("font-size: 16px; font-weight: bold;")
+        pin_section.addWidget(self.pin_label)
 
         self.pin_input = QLineEdit()
         self.pin_input.setEchoMode(QLineEdit.EchoMode.Password)
         self.pin_input.setPlaceholderText("Enter your PIN...")
         self.pin_input.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.pin_input.setStyleSheet("font-size: 18px; padding: 15px;")
+        self.pin_input.setStyleSheet("font-size: 20px; padding: 18px; font-weight: bold; letter-spacing: 3px;")
         self.pin_input.returnPressed.connect(self.handle_login)
-        form_layout.addWidget(self.pin_input)
+        pin_section.addWidget(self.pin_input)
+        
+        form_layout.addLayout(pin_section)
         
         # Show PIN checkbox (for setup only)
         if not pin_exists():
             self.show_pin_cb = QCheckBox("Show PIN")
+            self.show_pin_cb.setStyleSheet("font-size: 14px; margin: 10px;")
             self.show_pin_cb.toggled.connect(self.toggle_pin_visibility)
             form_layout.addWidget(self.show_pin_cb)
         
         # Login button
         self.login_button = QPushButton("Login" if pin_exists() else "Create PIN")
-        self.login_button.setStyleSheet("font-size: 16px; padding: 15px; font-weight: bold;")
+        self.login_button.setStyleSheet("""
+            QPushButton {
+                font-size: 18px; 
+                padding: 18px; 
+                font-weight: bold;
+                border-radius: 12px;
+                min-height: 20px;
+            }
+        """)
         self.login_button.clicked.connect(self.handle_login)
         form_layout.addWidget(self.login_button)
         
         # Progress bar (hidden initially)
         self.progress_bar = QProgressBar()
         self.progress_bar.setVisible(False)
-        self.progress_bar.setStyleSheet("margin: 10px 0;")
+        self.progress_bar.setStyleSheet("margin: 15px 0; height: 8px;")
         form_layout.addWidget(self.progress_bar)
         
         layout.addLayout(form_layout)
@@ -125,21 +142,28 @@ class LoginWindow(QWidget):
         footer_layout = QVBoxLayout()
         footer_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
         
+        # Security info
+        security_info = QLabel("🔒 Your data is encrypted with military-grade security")
+        security_info.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        security_info.setStyleSheet("color: #888; font-size: 12px; margin: 15px 0;")
+        footer_layout.addWidget(security_info)
+        
         # Version info
         version_label = QLabel("v2.0 - Enhanced Edition")
         version_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        version_label.setStyleSheet("color: #888; font-size: 12px; margin-top: 20px;")
+        version_label.setStyleSheet("color: #666; font-size: 11px; margin-bottom: 15px;")
         footer_layout.addWidget(version_label)
         
         # Close button
         close_btn = QPushButton("×")
-        close_btn.setFixedSize(30, 30)
+        close_btn.setFixedSize(35, 35)
         close_btn.setStyleSheet("""
             QPushButton {
-                border-radius: 15px;
-                font-size: 18px;
+                border-radius: 17px;
+                font-size: 20px;
                 font-weight: bold;
                 background-color: #666;
+                color: white;
             }
             QPushButton:hover {
                 background-color: #888;
@@ -204,7 +228,7 @@ class LoginWindow(QWidget):
                 set_pin(pin)
                 self.show_success("PIN created successfully!")
                 # Use a short delay before opening dashboard
-                QTimer.singleShot(1000, lambda: self.login_success(pin))
+                QTimer.singleShot(800, lambda: self.login_success(pin))
         except Exception as e:
             self.set_loading(False)
             self.show_error(f"Error: {str(e)}")
@@ -213,7 +237,7 @@ class LoginWindow(QWidget):
         """Handle successful login"""
         self.pin = pin
         self.set_loading(False)
-        self.show_success("Login successful!")
+        self.show_success("Access granted! Opening vault...")
         
         # Open dashboard after a short delay
         def open_dashboard():
@@ -225,7 +249,7 @@ class LoginWindow(QWidget):
                 self.show_error(f"Failed to open dashboard: {str(e)}")
                 self.set_loading(False)
         
-        QTimer.singleShot(500, open_dashboard)
+        QTimer.singleShot(600, open_dashboard)
     
     def login_failed(self):
         """Handle failed login"""
@@ -235,7 +259,10 @@ class LoginWindow(QWidget):
         remaining = self.max_attempts - self.failed_attempts
         
         if remaining > 0:
-            self.show_error(f"Incorrect PIN. {remaining} attempts remaining.")
+            self.show_error(f"❌ Incorrect PIN. {remaining} attempts remaining.")
+            # Simple error indication
+            self.pin_input.setStyleSheet(self.pin_input.styleSheet() + "; border: 3px solid red;")
+            QTimer.singleShot(1000, lambda: self.pin_input.setStyleSheet("font-size: 20px; padding: 18px; font-weight: bold; letter-spacing: 3px;"))
             self.pin_input.clear()
             self.pin_input.setFocus()
         else:
@@ -246,7 +273,7 @@ class LoginWindow(QWidget):
         self.is_locked = True
         self.pin_input.setEnabled(False)
         self.login_button.setEnabled(False)
-        self.show_error("Too many failed attempts. Interface locked.")
+        self.show_error("🚫 Too many failed attempts. Interface locked for 5 minutes.")
         
         # Auto-unlock after 5 minutes
         QTimer.singleShot(300000, self.unlock_interface)
@@ -266,7 +293,7 @@ class LoginWindow(QWidget):
         self.login_button.setEnabled(not loading)
         
         if loading:
-            self.login_button.setText("Processing...")
+            self.login_button.setText("🔄 Processing...")
             self.progress_bar.setVisible(True)
             self.progress_bar.setRange(0, 0)  # Indeterminate
         else:
@@ -275,13 +302,13 @@ class LoginWindow(QWidget):
     
     def show_error(self, message):
         """Show error message"""
-        self.status_label.setText(f"❌ {message}")
-        self.status_label.setStyleSheet("color: #ff4444; font-weight: bold;")
+        self.status_label.setText(message)
+        self.status_label.setStyleSheet("color: #ff4444; font-weight: bold; font-size: 14px;")
     
     def show_success(self, message):
         """Show success message"""
         self.status_label.setText(f"✅ {message}")
-        self.status_label.setStyleSheet("color: #44ff44; font-weight: bold;")
+        self.status_label.setStyleSheet("color: #44ff44; font-weight: bold; font-size: 14px;")
     
     def keyPressEvent(self, event):
         """Handle key press events"""

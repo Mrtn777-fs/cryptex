@@ -97,7 +97,6 @@ def generate_qss(theme_name):
     QLineEdit:focus, QTextEdit:focus {{
         border: 2px solid {theme['primary_hover']};
         background-color: {theme['surface_hover']};
-        box-shadow: 0 0 10px {theme['primary']}40;
     }}
 
     QLineEdit:hover, QTextEdit:hover {{
@@ -105,11 +104,7 @@ def generate_qss(theme_name):
     }}
 
     QPushButton {{
-        background: qlineargradient(
-            x1: 0, y1: 0, x2: 0, y2: 1,
-            stop: 0 {theme['primary']},
-            stop: 1 {theme['primary_pressed']}
-        );
+        background-color: {theme['primary']};
         color: white;
         border: none;
         border-radius: 8px;
@@ -120,17 +115,11 @@ def generate_qss(theme_name):
     }}
 
     QPushButton:hover {{
-        background: qlineargradient(
-            x1: 0, y1: 0, x2: 0, y2: 1,
-            stop: 0 {theme['primary_hover']},
-            stop: 1 {theme['primary']}
-        );
-        transform: translateY(-1px);
+        background-color: {theme['primary_hover']};
     }}
 
     QPushButton:pressed {{
         background-color: {theme['primary_pressed']};
-        transform: translateY(1px);
     }}
 
     QPushButton:disabled {{
@@ -245,7 +234,8 @@ def generate_qss(theme_name):
     }}
 
     QComboBox::down-arrow {{
-        image: none;
+        width: 0;
+        height: 0;
         border-left: 5px solid transparent;
         border-right: 5px solid transparent;
         border-top: 5px solid {theme['text']};
@@ -302,13 +292,6 @@ def generate_qss(theme_name):
 
     QCheckBox::indicator:checked {{
         background-color: {theme['primary']};
-        image: none;
-    }}
-
-    QCheckBox::indicator:checked:after {{
-        content: "✓";
-        color: white;
-        font-weight: bold;
     }}
 
     QSlider::groove:horizontal {{
@@ -363,5 +346,67 @@ def generate_qss(theme_name):
         border-radius: 6px;
         padding: 8px;
         font-size: 12px;
+    }}
+
+    QMenuBar {{
+        background-color: {theme['surface']};
+        color: {theme['text']};
+        border-bottom: 1px solid {theme['border']};
+    }}
+
+    QMenuBar::item {{
+        background-color: transparent;
+        padding: 8px 12px;
+    }}
+
+    QMenuBar::item:selected {{
+        background-color: {theme['primary']};
+        color: white;
+    }}
+
+    QMenu {{
+        background-color: {theme['surface']};
+        color: {theme['text']};
+        border: 1px solid {theme['border']};
+        border-radius: 6px;
+    }}
+
+    QMenu::item {{
+        padding: 8px 20px;
+    }}
+
+    QMenu::item:selected {{
+        background-color: {theme['primary']};
+        color: white;
+    }}
+
+    QToolBar {{
+        background-color: {theme['surface']};
+        border: none;
+        spacing: 3px;
+        padding: 5px;
+    }}
+
+    QToolBar QToolButton {{
+        background-color: transparent;
+        color: {theme['text']};
+        border: none;
+        padding: 8px 12px;
+        border-radius: 6px;
+    }}
+
+    QToolBar QToolButton:hover {{
+        background-color: {theme['surface_hover']};
+    }}
+
+    QToolBar QToolButton:pressed {{
+        background-color: {theme['primary']};
+        color: white;
+    }}
+
+    QStatusBar {{
+        background-color: {theme['surface']};
+        color: {theme['text']};
+        border-top: 1px solid {theme['border']};
     }}
     """

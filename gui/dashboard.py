@@ -256,8 +256,13 @@ class Dashboard(QMainWindow):
         )
 
     def refresh_notes(self):
+        """Refresh the notes list"""
         self.note_list.clear()
-        self.notes = load_data(self.pin)
+        try:
+            self.notes = load_data(self.pin)
+        except Exception as e:
+            self.notes = {}
+            print(f"Error loading notes: {e}")
         
         # Sort notes by title
         sorted_titles = sorted(self.notes.keys())
@@ -275,20 +280,29 @@ class Dashboard(QMainWindow):
         """Filter notes based on search text"""
         for i in range(self.note_list.count()):
             item = self.note_list.item(i)
-            item.setHidden(text.lower() not in item.text().lower())
+            if item:  # Check if item exists
+                item.setHidden(text.lower() not in item.text().lower())
 
     def display_note(self, item):
+        """Display selected note"""
+        if not item:  # Check if item is valid
+            return
+            
         # Save current note if modified
         if self.is_modified and self.current_note_title:
             self.save_note()
         
-        title = item.text()
-        self.current_note_title = title
-        self.note_title.setText(title)
-        self.note_text.setText(self.notes[title])
-        self.is_modified = False
-        self.update_ui_state()
-        self.update_word_count()
+        try:
+            title = item.text()
+            if title in self.notes:
+                self.current_note_title = title
+                self.note_title.setText(title)
+                self.note_text.setText(self.notes[title])
+                self.is_modified = False
+                self.update_ui_state()
+                self.update_word_count()
+        except Exception as e:
+            QMessageBox.warning(self, "Error", f"Failed to display note: {e}")
     
     def new_note(self):
         """Create a new note"""
@@ -343,6 +357,7 @@ class Dashboard(QMainWindow):
             self.modified_label.setStyleSheet("color: #66ff66; font-size: 12px;")
 
     def save_note(self):
+        """Save current note"""
         title = self.note_title.text().strip()
         text = self.note_text.toPlainText()
         
@@ -363,7 +378,8 @@ class Dashboard(QMainWindow):
             
             # Select the saved note in list
             for i in range(self.note_list.count()):
-                if self.note_list.item(i).text() == title:
+                item = self.note_list.item(i)
+                if item and item.text() == title:
                     self.note_list.setCurrentRow(i)
                     break
                     
@@ -371,6 +387,7 @@ class Dashboard(QMainWindow):
             QMessageBox.critical(self, "Error", f"Failed to save note: {e}")
 
     def delete_note(self):
+        """Delete selected note"""
         current_item = self.note_list.currentItem()
         if not current_item:
             QMessageBox.information(self, "Info", "Please select a note to delete")
@@ -405,6 +422,7 @@ class Dashboard(QMainWindow):
             QMessageBox.critical(self, "Error", f"Failed to delete note: {e}")
 
     def export_vault(self):
+        """Export vault to file"""
         default_name = f"cryptex_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.enc"
         path, _ = QFileDialog.getSaveFileName(
             self, "Export Vault", default_name,
@@ -420,6 +438,7 @@ class Dashboard(QMainWindow):
                 QMessageBox.critical(self, "Export Failed", f"Failed to export vault: {e}")
 
     def import_vault(self):
+        """Import vault from file"""
         path, _ = QFileDialog.getOpenFileName(
             self, "Import Vault", "",
             "Cryptex Vault (*.enc);;All Files (*)"

@@ -2,13 +2,12 @@ from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel,
                             QLineEdit, QPushButton, QMessageBox, QFrame,
                             QProgressBar, QCheckBox)
 from PyQt6.QtCore import Qt, QTimer, pyqtSignal
-from PyQt6.QtGui import QFont, QPixmap, QPainter, QColor
+from PyQt6.QtGui import QFont
 import os
 from core.auth import check_pin, set_pin, pin_exists
 from core.settings import settings
 from assets.themes import generate_qss
 from gui.dashboard import Dashboard
-from gui.animations import animator
 
 class LoginWindow(QWidget):
     login_successful = pyqtSignal(str)
@@ -22,7 +21,6 @@ class LoginWindow(QWidget):
         
         self.setWindowTitle("Cryptex - Login")
         self.setFixedSize(400, 500)
-        self.setWindowFlags(Qt.WindowType.FramelessWindowHint)
         
         # Apply theme
         current_theme = settings.get("theme", "dark_red")
@@ -30,13 +28,10 @@ class LoginWindow(QWidget):
         
         self.setup_ui()
         self.center_window()
-        
-        # Animate window appearance
-        animator.fade_in(self, 300)
     
     def setup_ui(self):
         main_layout = QVBoxLayout()
-        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setContentsMargins(20, 20, 20, 20)
         
         # Main container
         container = QFrame()
@@ -61,7 +56,7 @@ class LoginWindow(QWidget):
         header_layout = QVBoxLayout()
         header_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
         
-        # Logo/Icon (using text for now)
+        # Logo/Icon
         logo = QLabel("🔐")
         logo.setAlignment(Qt.AlignmentFlag.AlignCenter)
         logo.setStyleSheet("font-size: 48px; margin: 10px;")
@@ -101,7 +96,7 @@ class LoginWindow(QWidget):
         self.pin_input.setEchoMode(QLineEdit.EchoMode.Password)
         self.pin_input.setPlaceholderText("Enter your PIN...")
         self.pin_input.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.pin_input.setStyleSheet("font-size: 18px; padding: 15px; text-align: center;")
+        self.pin_input.setStyleSheet("font-size: 18px; padding: 15px;")
         self.pin_input.returnPressed.connect(self.handle_login)
         form_layout.addWidget(self.pin_input)
         
@@ -179,7 +174,7 @@ class LoginWindow(QWidget):
         if self.is_locked:
             return
             
-        pin = self.pin_input.text()
+        pin = self.pin_input.text().strip()
         
         if not pin:
             self.show_error("Please enter a PIN")
@@ -188,26 +183,31 @@ class LoginWindow(QWidget):
         # Disable input during processing
         self.set_loading(True)
         
-        # Simulate processing delay for better UX
-        QTimer.singleShot(500, lambda: self.process_login(pin))
+        # Process immediately without delay to prevent freezing
+        self.process_login(pin)
     
     def process_login(self, pin):
-        """Process login after delay"""
-        if pin_exists():
-            if check_pin(pin):
-                self.login_success(pin)
+        """Process login"""
+        try:
+            if pin_exists():
+                if check_pin(pin):
+                    self.login_success(pin)
+                else:
+                    self.login_failed()
             else:
-                self.login_failed()
-        else:
-            if len(pin) < 4:
-                self.set_loading(False)
-                self.show_error("PIN must be at least 4 characters")
-                return
-            
-            # Create new PIN
-            set_pin(pin)
-            self.show_success("PIN created successfully!")
-            QTimer.singleShot(1000, lambda: self.login_success(pin))
+                if len(pin) < 4:
+                    self.set_loading(False)
+                    self.show_error("PIN must be at least 4 characters")
+                    return
+                
+                # Create new PIN
+                set_pin(pin)
+                self.show_success("PIN created successfully!")
+                # Use a short delay before opening dashboard
+                QTimer.singleShot(1000, lambda: self.login_success(pin))
+        except Exception as e:
+            self.set_loading(False)
+            self.show_error(f"Error: {str(e)}")
     
     def login_success(self, pin):
         """Handle successful login"""
@@ -215,13 +215,17 @@ class LoginWindow(QWidget):
         self.set_loading(False)
         self.show_success("Login successful!")
         
-        # Animate transition
+        # Open dashboard after a short delay
         def open_dashboard():
-            self.dashboard = Dashboard(pin)
-            self.dashboard.show()
-            self.close()
+            try:
+                self.dashboard = Dashboard(pin)
+                self.dashboard.show()
+                self.close()
+            except Exception as e:
+                self.show_error(f"Failed to open dashboard: {str(e)}")
+                self.set_loading(False)
         
-        QTimer.singleShot(800, open_dashboard)
+        QTimer.singleShot(500, open_dashboard)
     
     def login_failed(self):
         """Handle failed login"""
@@ -232,7 +236,6 @@ class LoginWindow(QWidget):
         
         if remaining > 0:
             self.show_error(f"Incorrect PIN. {remaining} attempts remaining.")
-            animator.shake(self.pin_input)
             self.pin_input.clear()
             self.pin_input.setFocus()
         else:

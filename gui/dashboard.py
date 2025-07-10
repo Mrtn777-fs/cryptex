@@ -2,40 +2,14 @@ from PyQt6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
                             QLabel, QPushButton, QTextEdit, QLineEdit, 
                             QListWidget, QMessageBox, QSplitter, QFrame,
                             QToolBar, QStatusBar, QMenuBar, QMenu, QFileDialog,
-                            QProgressBar, QSystemTrayIcon, QApplication,
-                            QListWidgetItem, QTextBrowser, QTabWidget)
-from PyQt6.QtCore import Qt, QTimer, pyqtSignal, QThread, pyqtSlot
-from PyQt6.QtGui import QAction, QIcon, QFont, QTextCharFormat, QColor, QPixmap
+                            QListWidgetItem)
+from PyQt6.QtCore import Qt, QTimer, pyqtSignal
+from PyQt6.QtGui import QAction, QFont
 from core.database import load_data, save_data, delete_note, export_vault, import_vault
 from core.settings import settings
 from assets.themes import generate_qss, THEMES
-from gui.animations import animator
-from gui.settings_dialog import SettingsDialog
-import os
-import json
 from datetime import datetime
-
-class AutoSaveThread(QThread):
-    """Background thread for auto-saving"""
-    save_requested = pyqtSignal(str, str, str)  # pin, title, content
-    
-    def __init__(self):
-        super().__init__()
-        self.pin = None
-        self.title = None
-        self.content = None
-        self.should_save = False
-    
-    def set_data(self, pin, title, content):
-        self.pin = pin
-        self.title = title
-        self.content = content
-        self.should_save = True
-    
-    def run(self):
-        if self.should_save and self.pin and self.title:
-            save_data(self.pin, self.title, self.content)
-            self.should_save = False
+import os
 
 class Dashboard(QMainWindow):
     def __init__(self, pin):
@@ -52,9 +26,6 @@ class Dashboard(QMainWindow):
         # Apply theme
         self.apply_theme()
         
-        # Setup auto-save
-        self.setup_autosave()
-        
         # Setup UI
         self.setup_ui()
         self.setup_menu_bar()
@@ -66,29 +37,11 @@ class Dashboard(QMainWindow):
         
         # Center window
         self.center_window()
-        
-        # Animate appearance
-        animator.fade_in(self, 300)
-        
-        # Load window geometry
-        self.load_geometry()
     
     def apply_theme(self):
         """Apply current theme"""
         current_theme = settings.get("theme", "dark_red")
         self.setStyleSheet(generate_qss(current_theme))
-    
-    def setup_autosave(self):
-        """Setup auto-save functionality"""
-        self.autosave_thread = AutoSaveThread()
-        self.autosave_thread.save_requested.connect(self.on_autosave_complete)
-        
-        self.autosave_timer = QTimer()
-        self.autosave_timer.timeout.connect(self.autosave_current_note)
-        
-        if settings.get("auto_save", True):
-            interval = settings.get("auto_save_interval", 30) * 1000
-            self.autosave_timer.start(interval)
     
     def setup_ui(self):
         """Setup main UI"""
@@ -110,8 +63,6 @@ class Dashboard(QMainWindow):
         
         # Set splitter proportions
         splitter.setSizes([300, 600])
-        splitter.setStretchFactor(0, 0)
-        splitter.setStretchFactor(1, 1)
         
         main_layout.addWidget(splitter)
     
@@ -145,7 +96,6 @@ class Dashboard(QMainWindow):
         # Note list
         self.note_list = QListWidget()
         self.note_list.itemClicked.connect(self.display_note)
-        self.note_list.setAlternatingRowColors(True)
         layout.addWidget(self.note_list)
         
         # Quick actions
@@ -244,19 +194,6 @@ class Dashboard(QMainWindow):
         exit_action.triggered.connect(self.close)
         file_menu.addAction(exit_action)
         
-        # Edit menu
-        edit_menu = menubar.addMenu("Edit")
-        
-        find_action = QAction("Find", self)
-        find_action.setShortcut("Ctrl+F")
-        find_action.triggered.connect(self.focus_search)
-        edit_menu.addAction(find_action)
-        
-        delete_action = QAction("Delete Note", self)
-        delete_action.setShortcut("Delete")
-        delete_action.triggered.connect(self.delete_note)
-        edit_menu.addAction(delete_action)
-        
         # View menu
         view_menu = menubar.addMenu("View")
         
@@ -266,14 +203,6 @@ class Dashboard(QMainWindow):
             action = QAction(theme_data["name"], self)
             action.triggered.connect(lambda checked, t=theme_key: self.change_theme(t))
             theme_menu.addAction(action)
-        
-        # Tools menu
-        tools_menu = menubar.addMenu("Tools")
-        
-        settings_action = QAction("Settings", self)
-        settings_action.setShortcut("Ctrl+,")
-        settings_action.triggered.connect(self.open_settings)
-        tools_menu.addAction(settings_action)
         
         # Help menu
         help_menu = menubar.addMenu("Help")
@@ -307,21 +236,10 @@ class Dashboard(QMainWindow):
         import_action = QAction("📥 Import", self)
         import_action.triggered.connect(self.import_vault)
         toolbar.addAction(import_action)
-        
-        toolbar.addSeparator()
-        
-        # Settings
-        settings_action = QAction("⚙️ Settings", self)
-        settings_action.triggered.connect(self.open_settings)
-        toolbar.addAction(settings_action)
     
     def setup_status_bar(self):
         """Setup status bar"""
         self.status_bar = self.statusBar()
-        
-        # Auto-save indicator
-        self.autosave_label = QLabel("Auto-save: ON" if settings.get("auto_save") else "Auto-save: OFF")
-        self.status_bar.addPermanentWidget(self.autosave_label)
         
         # Theme indicator
         theme_name = THEMES[settings.get("theme", "dark_red")]["name"]
@@ -336,16 +254,6 @@ class Dashboard(QMainWindow):
             (screen.width() - size.width()) // 2,
             (screen.height() - size.height()) // 2
         )
-    
-    def load_geometry(self):
-        """Load saved window geometry"""
-        geometry = settings.get("window_geometry")
-        if geometry:
-            self.restoreGeometry(geometry)
-    
-    def save_geometry(self):
-        """Save window geometry"""
-        settings.set("window_geometry", self.saveGeometry())
 
     def refresh_notes(self):
         self.note_list.clear()
@@ -356,17 +264,12 @@ class Dashboard(QMainWindow):
         
         for title in sorted_titles:
             item = QListWidgetItem(title)
-            item.setToolTip(f"Created: {title}")  # You could store creation date
             self.note_list.addItem(item)
         
         # Update note count
         count = len(self.notes)
-        if settings.get("show_note_count", True):
-            self.note_count_label.setText(f"({count})")
-            self.setWindowTitle(f"Cryptex - {count} notes")
-        else:
-            self.note_count_label.setText("")
-            self.setWindowTitle("Cryptex")
+        self.note_count_label.setText(f"({count})")
+        self.setWindowTitle(f"Cryptex - {count} notes")
     
     def filter_notes(self, text):
         """Filter notes based on search text"""
@@ -386,9 +289,6 @@ class Dashboard(QMainWindow):
         self.is_modified = False
         self.update_ui_state()
         self.update_word_count()
-        
-        # Animate note loading
-        animator.fade_in(self.note_text, 200)
     
     def new_note(self):
         """Create a new note"""
@@ -443,13 +343,12 @@ class Dashboard(QMainWindow):
             self.modified_label.setStyleSheet("color: #66ff66; font-size: 12px;")
 
     def save_note(self):
-        title = self.note_title.text()
+        title = self.note_title.text().strip()
         text = self.note_text.toPlainText()
         
-        if not title.strip():
+        if not title:
             QMessageBox.warning(self, "Error", "Please enter a note title")
             self.note_title.setFocus()
-            animator.shake(self.note_title)
             return
         
         try:
@@ -470,25 +369,6 @@ class Dashboard(QMainWindow):
                     
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to save note: {e}")
-    
-    def autosave_current_note(self):
-        """Auto-save current note if modified"""
-        if (self.is_modified and 
-            self.note_title.text().strip() and 
-            settings.get("auto_save", True)):
-            
-            title = self.note_title.text()
-            content = self.note_text.toPlainText()
-            
-            # Use background thread for auto-save
-            self.autosave_thread.set_data(self.pin, title, content)
-            if not self.autosave_thread.isRunning():
-                self.autosave_thread.start()
-    
-    @pyqtSlot()
-    def on_autosave_complete(self):
-        """Handle auto-save completion"""
-        self.status_bar.showMessage("Auto-saved", 2000)
 
     def delete_note(self):
         current_item = self.note_list.currentItem()
@@ -498,18 +378,17 @@ class Dashboard(QMainWindow):
         
         title = current_item.text()
         
-        # Confirm deletion if enabled
-        if settings.get("confirm_delete", True):
-            reply = QMessageBox.question(
-                self, "Confirm Delete",
-                f"Are you sure you want to delete the note '{title}'?\n\n"
-                "This action cannot be undone.",
-                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-                QMessageBox.StandardButton.No
-            )
-            
-            if reply != QMessageBox.StandardButton.Yes:
-                return
+        # Confirm deletion
+        reply = QMessageBox.question(
+            self, "Confirm Delete",
+            f"Are you sure you want to delete the note '{title}'?\n\n"
+            "This action cannot be undone.",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No
+        )
+        
+        if reply != QMessageBox.StandardButton.Yes:
+            return
         
         try:
             delete_note(self.pin, title)
@@ -564,11 +443,6 @@ class Dashboard(QMainWindow):
                 except Exception as e:
                     QMessageBox.critical(self, "Import Failed", f"Failed to import vault: {e}")
     
-    def focus_search(self):
-        """Focus search input"""
-        self.search_input.setFocus()
-        self.search_input.selectAll()
-    
     def change_theme(self, theme_key):
         """Change application theme"""
         settings.set("theme", theme_key)
@@ -578,38 +452,6 @@ class Dashboard(QMainWindow):
         theme_name = THEMES[theme_key]["name"]
         self.theme_label.setText(f"Theme: {theme_name}")
         self.status_bar.showMessage(f"Theme changed to {theme_name}", 3000)
-    
-    def open_settings(self):
-        """Open settings dialog"""
-        dialog = SettingsDialog(self.pin, self)
-        dialog.theme_changed.connect(self.on_theme_preview)
-        dialog.settings_changed.connect(self.on_settings_changed)
-        
-        if dialog.exec() == SettingsDialog.DialogCode.Accepted:
-            self.apply_theme()
-    
-    def on_theme_preview(self, theme_key):
-        """Preview theme change"""
-        self.setStyleSheet(generate_qss(theme_key))
-    
-    def on_settings_changed(self):
-        """Handle settings changes"""
-        # Update auto-save
-        if settings.get("auto_save", True):
-            interval = settings.get("auto_save_interval", 30) * 1000
-            self.autosave_timer.start(interval)
-            self.autosave_label.setText("Auto-save: ON")
-        else:
-            self.autosave_timer.stop()
-            self.autosave_label.setText("Auto-save: OFF")
-        
-        # Update note count display
-        self.refresh_notes()
-        
-        # Apply theme
-        self.apply_theme()
-        theme_name = THEMES[settings.get("theme", "dark_red")]["name"]
-        self.theme_label.setText(f"Theme: {theme_name}")
     
     def show_about(self):
         """Show about dialog"""
@@ -622,10 +464,8 @@ class Dashboard(QMainWindow):
             "<ul>"
             "<li>🔒 Military-grade encryption</li>"
             "<li>🎨 Multiple themes</li>"
-            "<li>💾 Auto-save functionality</li>"
             "<li>🔍 Search and filter</li>"
             "<li>📱 Modern, responsive UI</li>"
-            "<li>⚙️ Comprehensive settings</li>"
             "</ul>"
             "<p><b>Created by:</b> Mrtn777</p>"
             "<p><b>Enhanced by:</b> Claude AI</p>"
@@ -648,19 +488,5 @@ class Dashboard(QMainWindow):
             elif reply == QMessageBox.StandardButton.Cancel:
                 event.ignore()
                 return
-        
-        # Save window geometry
-        self.save_geometry()
-        
-        # Create backup if enabled
-        if settings.get("backup_on_exit", False):
-            try:
-                backup_path = f"data/auto_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.enc"
-                export_vault(backup_path)
-            except Exception:
-                pass  # Silent fail for auto-backup
-        
-        # Stop auto-save timer
-        self.autosave_timer.stop()
         
         event.accept()

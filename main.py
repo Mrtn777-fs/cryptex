@@ -3,7 +3,6 @@ import os
 from gui.login import LoginWindow
 from PyQt6.QtWidgets import QApplication
 from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QIcon
 from core.settings import settings
 
 def setup_application():
@@ -15,10 +14,6 @@ def setup_application():
     app.setApplicationVersion("2.0")
     app.setOrganizationName("Cryptex")
     app.setOrganizationDomain("cryptex.local")
-    
-    # Enable high DPI scaling
-    app.setAttribute(Qt.ApplicationAttribute.AA_EnableHighDpiScaling, True)
-    app.setAttribute(Qt.ApplicationAttribute.AA_UseHighDpiPixmaps, True)
     
     return app
 

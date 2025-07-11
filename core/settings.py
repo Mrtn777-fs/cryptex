@@ -6,7 +6,7 @@ from typing import Dict, Any
 SETTINGS_FILE = "data/settings.json"
 
 DEFAULT_SETTINGS = {
-    "theme": "dark_red",
+    "theme": "dark_modern",
     "auto_save": True,
     "auto_save_interval": 30,  # seconds
     "show_welcome": True,

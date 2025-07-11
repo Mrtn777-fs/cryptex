@@ -1,6 +1,22 @@
 """Modern theme definitions for Cryptex"""
 
 THEMES = {
+    "dark_red": {
+        "name": "Dark Red (Classic)",
+        "primary": "#cc2b2b",
+        "primary_hover": "#e53935",
+        "primary_pressed": "#b71c1c",
+        "background": "#1e1e1e",
+        "surface": "#2a2a2a",
+        "surface_hover": "#333333",
+        "text": "#ffffff",
+        "text_secondary": "#ff6666",
+        "border": "#cc2b2b",
+        "accent": "#ff4d4d",
+        "success": "#4caf50",
+        "error": "#f44336",
+        "warning": "#ff9800"
+    },
     "dark_modern": {
         "name": "Dark Modern",
         "primary": "#6366f1",

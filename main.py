@@ -15,6 +15,9 @@ def setup_application():
     app.setOrganizationName("Cryptex")
     app.setOrganizationDomain("cryptex.local")
     
+    # Set application style
+    app.setStyle('Fusion')
+    
     return app
 
 def main():

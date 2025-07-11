@@ -1,8 +1,8 @@
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
-                            QLineEdit, QPushButton, QMessageBox, QFrame,
-                            QProgressBar, QCheckBox)
-from PyQt6.QtCore import Qt, QTimer, pyqtSignal
-from PyQt6.QtGui import QFont
+                            QLineEdit, QPushButton, QFrame, QProgressBar, 
+                            QCheckBox, QGraphicsOpacityEffect, QSpacerItem, QSizePolicy)
+from PyQt6.QtCore import Qt, QTimer, pyqtSignal, QPropertyAnimation, QEasingCurve, QRect
+from PyQt6.QtGui import QFont, QPalette
 import os
 from core.auth import check_pin, set_pin, pin_exists
 from core.settings import settings
@@ -18,91 +18,202 @@ class LoginWindow(QWidget):
         self.failed_attempts = 0
         self.max_attempts = 5
         self.is_locked = False
+        self.animation = None
         
         self.setWindowTitle("Cryptex - Secure Login")
-        self.setFixedSize(450, 550)
+        self.setFixedSize(500, 700)
+        self.setWindowFlags(Qt.WindowType.FramelessWindowHint)
         
         # Apply theme
-        current_theme = settings.get("theme", "dark_red")
+        current_theme = settings.get("theme", "dark_modern")
         self.setStyleSheet(generate_qss(current_theme))
         
         self.setup_ui()
         self.center_window()
+        self.setup_animations()
     
     def setup_ui(self):
         main_layout = QVBoxLayout()
-        main_layout.setContentsMargins(30, 30, 30, 30)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setSpacing(0)
         
-        # Main container
+        # Main container with gradient background
         container = QFrame()
-        container.setObjectName("card")
-        layout = QVBoxLayout(container)
-        layout.setSpacing(25)
+        container.setObjectName("login-card")
+        container.setStyleSheet(f"""
+            QFrame#login-card {{
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 #1a1a2e, stop:1 #0f0f23);
+                border-radius: 24px;
+                border: 2px solid #6366f1;
+            }}
+        """)
         
-        # Header
+        layout = QVBoxLayout(container)
+        layout.setSpacing(30)
+        layout.setContentsMargins(40, 40, 40, 40)
+        
+        # Header section
         self.setup_header(layout)
         
-        # Login form
+        # Login form section
         self.setup_login_form(layout)
         
-        # Footer
+        # Footer section
         self.setup_footer(layout)
         
         main_layout.addWidget(container)
         self.setLayout(main_layout)
     
     def setup_header(self, layout):
-        """Setup header with logo and title"""
+        """Setup modern header with logo and title"""
         header_layout = QVBoxLayout()
         header_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        header_layout.setSpacing(20)
         
-        # Logo/Icon
+        # Logo container
+        logo_container = QFrame()
+        logo_container.setFixedSize(120, 120)
+        logo_container.setStyleSheet("""
+            QFrame {
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
+                    stop:0 #6366f1, stop:1 #8b5cf6);
+                border-radius: 60px;
+                border: 3px solid #a855f7;
+            }
+        """)
+        
+        logo_layout = QVBoxLayout(logo_container)
+        logo_layout.setContentsMargins(0, 0, 0, 0)
+        
+        # Logo icon
         logo = QLabel("🔐")
         logo.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        logo.setStyleSheet("font-size: 64px; margin: 15px;")
-        header_layout.addWidget(logo)
+        logo.setStyleSheet("font-size: 48px; background: transparent; border: none;")
+        logo_layout.addWidget(logo)
+        
+        # Center the logo container
+        logo_center_layout = QHBoxLayout()
+        logo_center_layout.addStretch()
+        logo_center_layout.addWidget(logo_container)
+        logo_center_layout.addStretch()
+        header_layout.addLayout(logo_center_layout)
         
         # Title
         title = QLabel("CRYPTEX")
         title.setObjectName("title")
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        title.setStyleSheet("font-size: 32px; font-weight: bold; margin: 10px;")
+        title.setStyleSheet("""
+            font-size: 42px; 
+            font-weight: 800; 
+            color: #6366f1;
+            letter-spacing: 3px;
+            margin: 10px 0;
+        """)
         header_layout.addWidget(title)
         
         # Subtitle
         subtitle = QLabel("Secure Note Manager")
         subtitle.setObjectName("subtitle")
         subtitle.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        subtitle.setStyleSheet("font-size: 18px; margin-bottom: 20px;")
+        subtitle.setStyleSheet("""
+            font-size: 18px; 
+            color: #a1a1aa;
+            font-weight: 500;
+            margin-bottom: 10px;
+        """)
         header_layout.addWidget(subtitle)
+        
+        # Version badge
+        version_badge = QLabel("v2.0 Enhanced")
+        version_badge.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        version_badge.setStyleSheet("""
+            background-color: #6366f1;
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin: 10px 0;
+        """)
+        version_badge.setFixedWidth(120)
+        
+        version_center_layout = QHBoxLayout()
+        version_center_layout.addStretch()
+        version_center_layout.addWidget(version_badge)
+        version_center_layout.addStretch()
+        header_layout.addLayout(version_center_layout)
         
         layout.addLayout(header_layout)
     
     def setup_login_form(self, layout):
-        """Setup login form"""
+        """Setup modern login form"""
         form_layout = QVBoxLayout()
-        form_layout.setSpacing(20)
+        form_layout.setSpacing(25)
         
         # Status label
         self.status_label = QLabel()
         self.status_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.status_label.setStyleSheet("color: #ff6666; font-weight: bold; min-height: 20px;")
+        self.status_label.setStyleSheet("""
+            color: #ef4444; 
+            font-weight: 600; 
+            font-size: 14px;
+            min-height: 25px;
+            padding: 8px;
+            border-radius: 8px;
+        """)
         form_layout.addWidget(self.status_label)
         
         # PIN input section
         pin_section = QVBoxLayout()
-        pin_section.setSpacing(10)
+        pin_section.setSpacing(15)
         
-        self.pin_label = QLabel("Enter PIN" if pin_exists() else "Create a new PIN")
+        # PIN label
+        self.pin_label = QLabel("Enter your PIN" if pin_exists() else "Create a secure PIN")
         self.pin_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.pin_label.setStyleSheet("font-size: 16px; font-weight: bold;")
+        self.pin_label.setStyleSheet("""
+            font-size: 18px; 
+            font-weight: 600;
+            color: #ffffff;
+            margin-bottom: 5px;
+        """)
         pin_section.addWidget(self.pin_label)
+        
+        # PIN description
+        pin_desc = QLabel("Minimum 4 characters" if not pin_exists() else "Enter your secure PIN to continue")
+        pin_desc.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        pin_desc.setStyleSheet("""
+            font-size: 14px;
+            color: #a1a1aa;
+            margin-bottom: 10px;
+        """)
+        pin_section.addWidget(pin_desc)
 
+        # PIN input
         self.pin_input = QLineEdit()
         self.pin_input.setEchoMode(QLineEdit.EchoMode.Password)
-        self.pin_input.setPlaceholderText("Enter your PIN...")
+        self.pin_input.setPlaceholderText("Enter PIN...")
         self.pin_input.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.pin_input.setStyleSheet("font-size: 20px; padding: 18px; font-weight: bold; letter-spacing: 3px;")
+        self.pin_input.setStyleSheet("""
+            QLineEdit {
+                font-size: 24px; 
+                padding: 20px; 
+                font-weight: 600; 
+                letter-spacing: 8px;
+                text-align: center;
+                background-color: #1a1a2e;
+                border: 3px solid #374151;
+                border-radius: 16px;
+                color: #ffffff;
+            }
+            QLineEdit:focus {
+                border: 3px solid #6366f1;
+                background-color: #16213e;
+            }
+            QLineEdit:hover {
+                border: 3px solid #7c3aed;
+            }
+        """)
         self.pin_input.returnPressed.connect(self.handle_login)
         pin_section.addWidget(self.pin_input)
         
@@ -110,20 +221,57 @@ class LoginWindow(QWidget):
         
         # Show PIN checkbox (for setup only)
         if not pin_exists():
+            checkbox_layout = QHBoxLayout()
+            checkbox_layout.addStretch()
+            
             self.show_pin_cb = QCheckBox("Show PIN")
-            self.show_pin_cb.setStyleSheet("font-size: 14px; margin: 10px;")
+            self.show_pin_cb.setStyleSheet("""
+                QCheckBox {
+                    font-size: 14px; 
+                    color: #a1a1aa;
+                    font-weight: 500;
+                }
+                QCheckBox::indicator {
+                    width: 18px;
+                    height: 18px;
+                    border: 2px solid #6366f1;
+                    border-radius: 4px;
+                    background-color: #1a1a2e;
+                }
+                QCheckBox::indicator:checked {
+                    background-color: #6366f1;
+                }
+            """)
             self.show_pin_cb.toggled.connect(self.toggle_pin_visibility)
-            form_layout.addWidget(self.show_pin_cb)
+            checkbox_layout.addWidget(self.show_pin_cb)
+            checkbox_layout.addStretch()
+            form_layout.addLayout(checkbox_layout)
         
         # Login button
-        self.login_button = QPushButton("Login" if pin_exists() else "Create PIN")
+        self.login_button = QPushButton("🔓 Login" if pin_exists() else "🔐 Create PIN")
         self.login_button.setStyleSheet("""
             QPushButton {
                 font-size: 18px; 
-                padding: 18px; 
-                font-weight: bold;
-                border-radius: 12px;
-                min-height: 20px;
+                padding: 18px 32px; 
+                font-weight: 700;
+                border-radius: 16px;
+                min-height: 25px;
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #6366f1, stop:1 #8b5cf6);
+                color: white;
+                border: none;
+            }
+            QPushButton:hover {
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #7c3aed, stop:1 #a855f7);
+            }
+            QPushButton:pressed {
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #4f46e5, stop:1 #7c2d12);
+            }
+            QPushButton:disabled {
+                background-color: #374151;
+                color: #6b7280;
             }
         """)
         self.login_button.clicked.connect(self.handle_login)
@@ -132,51 +280,91 @@ class LoginWindow(QWidget):
         # Progress bar (hidden initially)
         self.progress_bar = QProgressBar()
         self.progress_bar.setVisible(False)
-        self.progress_bar.setStyleSheet("margin: 15px 0; height: 8px;")
+        self.progress_bar.setStyleSheet("""
+            QProgressBar {
+                border: none;
+                border-radius: 8px;
+                background-color: #1a1a2e;
+                height: 8px;
+                text-align: center;
+            }
+            QProgressBar::chunk {
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #6366f1, stop:1 #8b5cf6);
+                border-radius: 8px;
+            }
+        """)
         form_layout.addWidget(self.progress_bar)
         
         layout.addLayout(form_layout)
     
     def setup_footer(self, layout):
-        """Setup footer"""
+        """Setup modern footer"""
         footer_layout = QVBoxLayout()
         footer_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        footer_layout.setSpacing(15)
         
-        # Security info
-        security_info = QLabel("🔒 Your data is encrypted with military-grade security")
-        security_info.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        security_info.setStyleSheet("color: #888; font-size: 12px; margin: 15px 0;")
-        footer_layout.addWidget(security_info)
+        # Security features
+        features_layout = QVBoxLayout()
+        features_layout.setSpacing(8)
         
-        # Version info
-        version_label = QLabel("v2.0 - Enhanced Edition")
-        version_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        version_label.setStyleSheet("color: #666; font-size: 11px; margin-bottom: 15px;")
-        footer_layout.addWidget(version_label)
+        features = [
+            "🔒 Military-grade AES encryption",
+            "🛡️ Zero-knowledge architecture", 
+            "💾 Local storage only",
+            "🔐 PIN-based authentication"
+        ]
+        
+        for feature in features:
+            feature_label = QLabel(feature)
+            feature_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            feature_label.setStyleSheet("""
+                color: #a1a1aa; 
+                font-size: 12px; 
+                font-weight: 500;
+                margin: 2px 0;
+            """)
+            features_layout.addWidget(feature_label)
+        
+        layout.addLayout(features_layout)
         
         # Close button
-        close_btn = QPushButton("×")
-        close_btn.setFixedSize(35, 35)
+        close_layout = QHBoxLayout()
+        close_layout.addStretch()
+        
+        close_btn = QPushButton("✕")
+        close_btn.setFixedSize(40, 40)
         close_btn.setStyleSheet("""
             QPushButton {
-                border-radius: 17px;
-                font-size: 20px;
+                border-radius: 20px;
+                font-size: 16px;
                 font-weight: bold;
-                background-color: #666;
-                color: white;
+                background-color: #374151;
+                color: #a1a1aa;
+                border: none;
             }
             QPushButton:hover {
-                background-color: #888;
+                background-color: #ef4444;
+                color: white;
             }
         """)
         close_btn.clicked.connect(self.close)
-        
-        close_layout = QHBoxLayout()
-        close_layout.addStretch()
         close_layout.addWidget(close_btn)
-        footer_layout.addLayout(close_layout)
         
-        layout.addLayout(footer_layout)
+        layout.addLayout(close_layout)
+    
+    def setup_animations(self):
+        """Setup smooth animations"""
+        # Fade in animation
+        self.opacity_effect = QGraphicsOpacityEffect()
+        self.setGraphicsEffect(self.opacity_effect)
+        
+        self.fade_animation = QPropertyAnimation(self.opacity_effect, b"opacity")
+        self.fade_animation.setDuration(800)
+        self.fade_animation.setStartValue(0.0)
+        self.fade_animation.setEndValue(1.0)
+        self.fade_animation.setEasingCurve(QEasingCurve.Type.OutCubic)
+        self.fade_animation.start()
     
     def center_window(self):
         """Center the window on screen"""
@@ -202,13 +390,14 @@ class LoginWindow(QWidget):
         
         if not pin:
             self.show_error("Please enter a PIN")
+            self.shake_animation()
             return
         
-        # Disable input during processing
+        # Set loading state
         self.set_loading(True)
         
-        # Process immediately without delay to prevent freezing
-        self.process_login(pin)
+        # Process login with a small delay for smooth UX
+        QTimer.singleShot(500, lambda: self.process_login(pin))
     
     def process_login(self, pin):
         """Process login"""
@@ -222,16 +411,17 @@ class LoginWindow(QWidget):
                 if len(pin) < 4:
                     self.set_loading(False)
                     self.show_error("PIN must be at least 4 characters")
+                    self.shake_animation()
                     return
                 
                 # Create new PIN
                 set_pin(pin)
                 self.show_success("PIN created successfully!")
-                # Use a short delay before opening dashboard
-                QTimer.singleShot(800, lambda: self.login_success(pin))
+                QTimer.singleShot(1200, lambda: self.login_success(pin))
         except Exception as e:
             self.set_loading(False)
             self.show_error(f"Error: {str(e)}")
+            self.shake_animation()
     
     def login_success(self, pin):
         """Handle successful login"""
@@ -239,7 +429,7 @@ class LoginWindow(QWidget):
         self.set_loading(False)
         self.show_success("Access granted! Opening vault...")
         
-        # Open dashboard after a short delay
+        # Fade out and open dashboard
         def open_dashboard():
             try:
                 self.dashboard = Dashboard(pin)
@@ -249,7 +439,7 @@ class LoginWindow(QWidget):
                 self.show_error(f"Failed to open dashboard: {str(e)}")
                 self.set_loading(False)
         
-        QTimer.singleShot(600, open_dashboard)
+        QTimer.singleShot(800, open_dashboard)
     
     def login_failed(self):
         """Handle failed login"""
@@ -260,9 +450,7 @@ class LoginWindow(QWidget):
         
         if remaining > 0:
             self.show_error(f"❌ Incorrect PIN. {remaining} attempts remaining.")
-            # Simple error indication
-            self.pin_input.setStyleSheet(self.pin_input.styleSheet() + "; border: 3px solid red;")
-            QTimer.singleShot(1000, lambda: self.pin_input.setStyleSheet("font-size: 20px; padding: 18px; font-weight: bold; letter-spacing: 3px;"))
+            self.shake_animation()
             self.pin_input.clear()
             self.pin_input.setFocus()
         else:
@@ -273,7 +461,7 @@ class LoginWindow(QWidget):
         self.is_locked = True
         self.pin_input.setEnabled(False)
         self.login_button.setEnabled(False)
-        self.show_error("🚫 Too many failed attempts. Interface locked for 5 minutes.")
+        self.show_error("🚫 Too many failed attempts. Locked for 5 minutes.")
         
         # Auto-unlock after 5 minutes
         QTimer.singleShot(300000, self.unlock_interface)
@@ -288,7 +476,7 @@ class LoginWindow(QWidget):
         self.pin_input.setFocus()
     
     def set_loading(self, loading):
-        """Set loading state"""
+        """Set loading state with smooth transitions"""
         self.pin_input.setEnabled(not loading)
         self.login_button.setEnabled(not loading)
         
@@ -297,18 +485,52 @@ class LoginWindow(QWidget):
             self.progress_bar.setVisible(True)
             self.progress_bar.setRange(0, 0)  # Indeterminate
         else:
-            self.login_button.setText("Login" if pin_exists() else "Create PIN")
+            self.login_button.setText("🔓 Login" if pin_exists() else "🔐 Create PIN")
             self.progress_bar.setVisible(False)
     
     def show_error(self, message):
-        """Show error message"""
+        """Show error message with styling"""
         self.status_label.setText(message)
-        self.status_label.setStyleSheet("color: #ff4444; font-weight: bold; font-size: 14px;")
+        self.status_label.setStyleSheet("""
+            color: #ef4444; 
+            font-weight: 600; 
+            font-size: 14px;
+            background-color: rgba(239, 68, 68, 0.1);
+            border: 1px solid #ef4444;
+            border-radius: 8px;
+            padding: 12px;
+        """)
     
     def show_success(self, message):
-        """Show success message"""
+        """Show success message with styling"""
         self.status_label.setText(f"✅ {message}")
-        self.status_label.setStyleSheet("color: #44ff44; font-weight: bold; font-size: 14px;")
+        self.status_label.setStyleSheet("""
+            color: #10b981; 
+            font-weight: 600; 
+            font-size: 14px;
+            background-color: rgba(16, 185, 129, 0.1);
+            border: 1px solid #10b981;
+            border-radius: 8px;
+            padding: 12px;
+        """)
+    
+    def shake_animation(self):
+        """Smooth shake animation for errors"""
+        if self.animation:
+            self.animation.stop()
+        
+        self.animation = QPropertyAnimation(self, b"geometry")
+        self.animation.setDuration(500)
+        self.animation.setLoopCount(3)
+        
+        start_geometry = self.geometry()
+        
+        self.animation.setKeyValueAt(0, start_geometry)
+        self.animation.setKeyValueAt(0.25, QRect(start_geometry.x() - 10, start_geometry.y(), start_geometry.width(), start_geometry.height()))
+        self.animation.setKeyValueAt(0.75, QRect(start_geometry.x() + 10, start_geometry.y(), start_geometry.width(), start_geometry.height()))
+        self.animation.setKeyValueAt(1, start_geometry)
+        
+        self.animation.start()
     
     def keyPressEvent(self, event):
         """Handle key press events"""

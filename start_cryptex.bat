@@ -1,43 +1,27 @@
 @echo off
+cd /d "%~dp0"
 title Cryptex - Secure Note Manager
-cls
 
-echo.
-echo  ╔═══════════════════════════════════════╗
-echo  ║           CRYPTEX v2.0                ║
-echo  ║      Secure Note Manager              ║
-echo  ╚═══════════════════════════════════════╝
-echo.
+:: Hide the console window
+if not DEFINED IS_MINIMIZED set IS_MINIMIZED=1 && start "" /min "%~dpnx0" %* && exit
 
 :: Check if Python is installed
 python --version >nul 2>&1
 if errorlevel 1 (
-    echo [ERROR] Python is not installed or not in PATH
-    echo Please install Python 3.10+ from https://python.org
+    echo Python is not installed. Please install Python 3.10+ from https://python.org
     pause
     exit /b 1
 )
 
-:: Check if required packages are installed
-echo [*] Checking requirements...
-python -c "import PyQt6, cryptography, argon2" >nul 2>&1
-if errorlevel 1 (
-    echo [*] Installing required packages...
-    pip install -r requirements.txt
-    if errorlevel 1 (
-        echo [ERROR] Failed to install requirements
-        pause
-        exit /b 1
-    )
-)
+:: Install requirements silently
+python -m pip install -r requirements.txt >nul 2>&1
 
-:: Start the application
-echo [*] Starting Cryptex...
+:: Start Cryptex
 python main.py
 
-:: Keep window open if there's an error
+:: Keep window open only if there's an error
 if errorlevel 1 (
     echo.
-    echo [ERROR] Application crashed. Check the error above.
-    pause
+    echo Application error occurred. Press any key to exit.
+    pause >nul
 )

@@ -1,116 +1,137 @@
-"""Theme definitions for Cryptex"""
+"""Modern theme definitions for Cryptex"""
 
 THEMES = {
-    "dark_red": {
-        "name": "Dark Red (Classic)",
-        "primary": "#cc2b2b",
-        "primary_hover": "#ff4d4d",
-        "primary_pressed": "#b71c1c",
-        "background": "#1e1e1e",
-        "surface": "#2a2a2a",
-        "surface_hover": "#333333",
-        "text": "#f2f2f2",
-        "text_secondary": "#ff6666",
-        "border": "#444444",
-        "accent": "#e53935"
-    },
-    "dark_blue": {
-        "name": "Dark Blue",
-        "primary": "#1976d2",
-        "primary_hover": "#42a5f5",
-        "primary_pressed": "#0d47a1",
-        "background": "#121212",
-        "surface": "#1e1e1e",
-        "surface_hover": "#2c2c2c",
+    "dark_modern": {
+        "name": "Dark Modern",
+        "primary": "#6366f1",
+        "primary_hover": "#7c3aed",
+        "primary_pressed": "#4f46e5",
+        "background": "#0f0f23",
+        "surface": "#1a1a2e",
+        "surface_hover": "#16213e",
         "text": "#ffffff",
-        "text_secondary": "#64b5f6",
-        "border": "#424242",
-        "accent": "#2196f3"
-    },
-    "dark_purple": {
-        "name": "Dark Purple",
-        "primary": "#7b1fa2",
-        "primary_hover": "#ab47bc",
-        "primary_pressed": "#4a148c",
-        "background": "#1a1a1a",
-        "surface": "#2d2d2d",
-        "surface_hover": "#3a3a3a",
-        "text": "#f5f5f5",
-        "text_secondary": "#ce93d8",
-        "border": "#4a4a4a",
-        "accent": "#9c27b0"
-    },
-    "dark_green": {
-        "name": "Dark Green",
-        "primary": "#388e3c",
-        "primary_hover": "#66bb6a",
-        "primary_pressed": "#1b5e20",
-        "background": "#0d1b0d",
-        "surface": "#1a2e1a",
-        "surface_hover": "#2e4a2e",
-        "text": "#e8f5e8",
-        "text_secondary": "#81c784",
-        "border": "#2e7d32",
-        "accent": "#4caf50"
+        "text_secondary": "#a1a1aa",
+        "border": "#374151",
+        "accent": "#8b5cf6",
+        "success": "#10b981",
+        "error": "#ef4444",
+        "warning": "#f59e0b"
     },
     "cyberpunk": {
         "name": "Cyberpunk",
         "primary": "#ff0080",
-        "primary_hover": "#ff33a1",
-        "primary_pressed": "#cc0066",
+        "primary_hover": "#ff1a8c",
+        "primary_pressed": "#e6006b",
         "background": "#0a0a0a",
         "surface": "#1a0a1a",
         "surface_hover": "#2a1a2a",
         "text": "#00ffff",
         "text_secondary": "#ff0080",
         "border": "#ff0080",
-        "accent": "#00ff80"
+        "accent": "#00ff80",
+        "success": "#00ff80",
+        "error": "#ff0040",
+        "warning": "#ffff00"
+    },
+    "ocean": {
+        "name": "Ocean Blue",
+        "primary": "#0ea5e9",
+        "primary_hover": "#0284c7",
+        "primary_pressed": "#0369a1",
+        "background": "#0c1222",
+        "surface": "#1e293b",
+        "surface_hover": "#334155",
+        "text": "#f8fafc",
+        "text_secondary": "#94a3b8",
+        "border": "#475569",
+        "accent": "#06b6d4",
+        "success": "#22c55e",
+        "error": "#ef4444",
+        "warning": "#f59e0b"
+    },
+    "forest": {
+        "name": "Forest Green",
+        "primary": "#22c55e",
+        "primary_hover": "#16a34a",
+        "primary_pressed": "#15803d",
+        "background": "#0f1419",
+        "surface": "#1a2e1a",
+        "surface_hover": "#2d4a2d",
+        "text": "#f0fdf4",
+        "text_secondary": "#86efac",
+        "border": "#166534",
+        "accent": "#4ade80",
+        "success": "#22c55e",
+        "error": "#ef4444",
+        "warning": "#f59e0b"
+    },
+    "sunset": {
+        "name": "Sunset Orange",
+        "primary": "#f97316",
+        "primary_hover": "#ea580c",
+        "primary_pressed": "#c2410c",
+        "background": "#1c1917",
+        "surface": "#292524",
+        "surface_hover": "#44403c",
+        "text": "#fafaf9",
+        "text_secondary": "#fdba74",
+        "border": "#78716c",
+        "accent": "#fb923c",
+        "success": "#22c55e",
+        "error": "#ef4444",
+        "warning": "#f59e0b"
     }
 }
 
 def generate_qss(theme_name):
-    """Generate QSS stylesheet for the given theme"""
+    """Generate clean QSS stylesheet for the given theme"""
     theme = THEMES[theme_name]
     
     return f"""
+    /* Base Widget Styling */
     QWidget {{
         background-color: {theme['background']};
         color: {theme['text']};
-        font-family: "Segoe UI", "SF Pro Display", Arial, sans-serif;
+        font-family: "Segoe UI", "SF Pro Display", "Inter", sans-serif;
         font-size: 14px;
+        font-weight: 400;
     }}
 
     QMainWindow {{
         background-color: {theme['background']};
     }}
 
+    /* Input Fields */
     QLineEdit, QTextEdit {{
         background-color: {theme['surface']};
         color: {theme['text']};
-        border: 2px solid {theme['primary']};
-        border-radius: 8px;
-        padding: 10px;
+        border: 2px solid {theme['border']};
+        border-radius: 12px;
+        padding: 16px 20px;
+        font-size: 15px;
+        font-weight: 500;
         selection-background-color: {theme['primary']};
-        font-size: 14px;
     }}
 
     QLineEdit:focus, QTextEdit:focus {{
-        border: 2px solid {theme['primary_hover']};
+        border: 2px solid {theme['primary']};
         background-color: {theme['surface_hover']};
     }}
 
     QLineEdit:hover, QTextEdit:hover {{
         background-color: {theme['surface_hover']};
+        border: 2px solid {theme['primary_hover']};
     }}
 
+    /* Buttons */
     QPushButton {{
         background-color: {theme['primary']};
         color: white;
         border: none;
-        border-radius: 8px;
-        padding: 12px 20px;
+        border-radius: 12px;
+        padding: 16px 24px;
         font-weight: 600;
-        font-size: 14px;
+        font-size: 15px;
         min-height: 20px;
     }}
 
@@ -123,50 +144,106 @@ def generate_qss(theme_name):
     }}
 
     QPushButton:disabled {{
-        background-color: #555555;
-        color: #888888;
+        background-color: {theme['border']};
+        color: {theme['text_secondary']};
     }}
 
+    QPushButton#secondary {{
+        background-color: {theme['surface']};
+        color: {theme['text']};
+        border: 2px solid {theme['border']};
+    }}
+
+    QPushButton#secondary:hover {{
+        background-color: {theme['surface_hover']};
+        border: 2px solid {theme['primary']};
+    }}
+
+    QPushButton#danger {{
+        background-color: {theme['error']};
+    }}
+
+    QPushButton#danger:hover {{
+        background-color: #dc2626;
+    }}
+
+    /* Labels */
     QLabel {{
-        font-weight: 600;
-        color: {theme['text_secondary']};
-        font-size: 14px;
+        color: {theme['text']};
+        font-weight: 500;
     }}
 
     QLabel#title {{
-        font-size: 24px;
+        font-size: 32px;
         font-weight: 700;
         color: {theme['primary']};
-        margin: 10px 0;
+        margin: 20px 0;
     }}
 
     QLabel#subtitle {{
-        font-size: 16px;
+        font-size: 18px;
         font-weight: 500;
         color: {theme['text_secondary']};
-        margin: 5px 0;
+        margin: 10px 0;
     }}
 
+    QLabel#heading {{
+        font-size: 20px;
+        font-weight: 600;
+        color: {theme['text']};
+        margin: 15px 0 10px 0;
+    }}
+
+    QLabel#caption {{
+        font-size: 13px;
+        color: {theme['text_secondary']};
+        font-weight: 400;
+    }}
+
+    /* Cards and Frames */
+    QFrame {{
+        background-color: {theme['surface']};
+        border-radius: 16px;
+        border: 1px solid {theme['border']};
+        padding: 20px;
+    }}
+
+    QFrame#card {{
+        background-color: {theme['surface']};
+        border-radius: 20px;
+        border: 1px solid {theme['border']};
+        padding: 30px;
+        margin: 10px;
+    }}
+
+    QFrame#login-card {{
+        background-color: {theme['surface']};
+        border-radius: 24px;
+        border: 1px solid {theme['border']};
+        padding: 40px;
+        margin: 20px;
+    }}
+
+    /* List Widgets */
     QListWidget {{
         background-color: {theme['surface']};
-        border: 2px solid {theme['border']};
-        border-radius: 8px;
-        padding: 5px;
+        border: 1px solid {theme['border']};
+        border-radius: 12px;
+        padding: 8px;
         outline: none;
     }}
 
     QListWidget::item {{
         background-color: transparent;
         color: {theme['text']};
-        padding: 10px;
-        border-radius: 6px;
-        margin: 2px;
-        border: 1px solid transparent;
+        padding: 12px 16px;
+        border-radius: 8px;
+        margin: 2px 0;
+        border: none;
     }}
 
     QListWidget::item:hover {{
         background-color: {theme['surface_hover']};
-        border: 1px solid {theme['primary']};
     }}
 
     QListWidget::item:selected {{
@@ -175,6 +252,7 @@ def generate_qss(theme_name):
         font-weight: 600;
     }}
 
+    /* Scrollbars */
     QScrollBar:vertical {{
         background: {theme['surface']};
         width: 12px;
@@ -199,33 +277,20 @@ def generate_qss(theme_name):
         height: 0px;
     }}
 
-    QFrame {{
-        background-color: {theme['surface']};
-        border-radius: 12px;
-        border: 1px solid {theme['border']};
-        padding: 15px;
-    }}
-
-    QFrame#card {{
-        background-color: {theme['surface']};
-        border-radius: 12px;
-        border: 2px solid {theme['border']};
-        padding: 20px;
-        margin: 10px;
-    }}
-
+    /* Combo Boxes */
     QComboBox {{
         background-color: {theme['surface']};
         color: {theme['text']};
-        border: 2px solid {theme['primary']};
-        border-radius: 8px;
-        padding: 8px 12px;
+        border: 2px solid {theme['border']};
+        border-radius: 12px;
+        padding: 12px 16px;
         min-width: 150px;
+        font-weight: 500;
     }}
 
     QComboBox:hover {{
         background-color: {theme['surface_hover']};
-        border: 2px solid {theme['primary_hover']};
+        border: 2px solid {theme['primary']};
     }}
 
     QComboBox::drop-down {{
@@ -245,118 +310,66 @@ def generate_qss(theme_name):
     QComboBox QAbstractItemView {{
         background-color: {theme['surface']};
         color: {theme['text']};
-        border: 2px solid {theme['primary']};
-        border-radius: 8px;
-        selection-background-color: {theme['primary']};
-    }}
-
-    QTabWidget::pane {{
         border: 2px solid {theme['border']};
-        border-radius: 8px;
-        background-color: {theme['surface']};
+        border-radius: 12px;
+        selection-background-color: {theme['primary']};
+        padding: 4px;
     }}
 
-    QTabBar::tab {{
-        background-color: {theme['surface']};
-        color: {theme['text']};
-        padding: 10px 20px;
-        margin: 2px;
-        border-radius: 6px;
-        border: 1px solid {theme['border']};
-    }}
-
-    QTabBar::tab:selected {{
-        background-color: {theme['primary']};
-        color: white;
-        font-weight: 600;
-    }}
-
-    QTabBar::tab:hover {{
-        background-color: {theme['surface_hover']};
-        border: 1px solid {theme['primary']};
-    }}
-
+    /* Checkboxes */
     QCheckBox {{
         color: {theme['text']};
         font-size: 14px;
-        spacing: 8px;
+        font-weight: 500;
+        spacing: 12px;
     }}
 
     QCheckBox::indicator {{
-        width: 18px;
-        height: 18px;
-        border: 2px solid {theme['primary']};
-        border-radius: 4px;
+        width: 20px;
+        height: 20px;
+        border: 2px solid {theme['border']};
+        border-radius: 6px;
         background-color: {theme['surface']};
     }}
 
     QCheckBox::indicator:checked {{
         background-color: {theme['primary']};
-    }}
-
-    QSlider::groove:horizontal {{
-        border: 1px solid {theme['border']};
-        height: 6px;
-        background: {theme['surface']};
-        border-radius: 3px;
-    }}
-
-    QSlider::handle:horizontal {{
-        background: {theme['primary']};
         border: 2px solid {theme['primary']};
-        width: 18px;
-        height: 18px;
-        margin: -7px 0;
-        border-radius: 9px;
     }}
 
-    QSlider::handle:horizontal:hover {{
-        background: {theme['primary_hover']};
-        border: 2px solid {theme['primary_hover']};
+    QCheckBox::indicator:hover {{
+        border: 2px solid {theme['primary']};
     }}
 
+    /* Progress Bars */
     QProgressBar {{
-        border: 2px solid {theme['border']};
+        border: none;
         border-radius: 8px;
         text-align: center;
         background-color: {theme['surface']};
         color: {theme['text']};
         font-weight: 600;
+        height: 8px;
     }}
 
     QProgressBar::chunk {{
         background-color: {theme['primary']};
-        border-radius: 6px;
+        border-radius: 8px;
     }}
 
-    QMessageBox {{
-        background-color: {theme['background']};
-        color: {theme['text']};
-    }}
-
-    QMessageBox QPushButton {{
-        min-width: 80px;
-        padding: 8px 16px;
-    }}
-
-    QToolTip {{
-        background-color: {theme['surface']};
-        color: {theme['text']};
-        border: 1px solid {theme['primary']};
-        border-radius: 6px;
-        padding: 8px;
-        font-size: 12px;
-    }}
-
+    /* Menu Bar */
     QMenuBar {{
         background-color: {theme['surface']};
         color: {theme['text']};
         border-bottom: 1px solid {theme['border']};
+        padding: 4px;
     }}
 
     QMenuBar::item {{
         background-color: transparent;
-        padding: 8px 12px;
+        padding: 8px 16px;
+        border-radius: 8px;
+        font-weight: 500;
     }}
 
     QMenuBar::item:selected {{
@@ -368,11 +381,14 @@ def generate_qss(theme_name):
         background-color: {theme['surface']};
         color: {theme['text']};
         border: 1px solid {theme['border']};
-        border-radius: 6px;
+        border-radius: 12px;
+        padding: 8px;
     }}
 
     QMenu::item {{
-        padding: 8px 20px;
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-weight: 500;
     }}
 
     QMenu::item:selected {{
@@ -380,19 +396,21 @@ def generate_qss(theme_name):
         color: white;
     }}
 
+    /* Toolbar */
     QToolBar {{
         background-color: {theme['surface']};
         border: none;
-        spacing: 3px;
-        padding: 5px;
+        spacing: 8px;
+        padding: 8px;
     }}
 
     QToolBar QToolButton {{
         background-color: transparent;
         color: {theme['text']};
         border: none;
-        padding: 8px 12px;
-        border-radius: 6px;
+        padding: 10px 16px;
+        border-radius: 8px;
+        font-weight: 500;
     }}
 
     QToolBar QToolButton:hover {{
@@ -404,9 +422,73 @@ def generate_qss(theme_name):
         color: white;
     }}
 
+    /* Status Bar */
     QStatusBar {{
         background-color: {theme['surface']};
-        color: {theme['text']};
+        color: {theme['text_secondary']};
         border-top: 1px solid {theme['border']};
+        font-size: 12px;
+        padding: 4px;
+    }}
+
+    /* Tabs */
+    QTabWidget::pane {{
+        border: 1px solid {theme['border']};
+        border-radius: 12px;
+        background-color: {theme['surface']};
+        top: -1px;
+    }}
+
+    QTabBar::tab {{
+        background-color: {theme['surface']};
+        color: {theme['text_secondary']};
+        padding: 12px 20px;
+        margin: 2px;
+        border-radius: 8px;
+        font-weight: 500;
+    }}
+
+    QTabBar::tab:selected {{
+        background-color: {theme['primary']};
+        color: white;
+        font-weight: 600;
+    }}
+
+    QTabBar::tab:hover {{
+        background-color: {theme['surface_hover']};
+        color: {theme['text']};
+    }}
+
+    /* Splitter */
+    QSplitter::handle {{
+        background-color: {theme['border']};
+        width: 2px;
+        height: 2px;
+    }}
+
+    QSplitter::handle:hover {{
+        background-color: {theme['primary']};
+    }}
+
+    /* Message Boxes */
+    QMessageBox {{
+        background-color: {theme['background']};
+        color: {theme['text']};
+    }}
+
+    QMessageBox QPushButton {{
+        min-width: 80px;
+        padding: 10px 20px;
+    }}
+
+    /* Tooltips */
+    QToolTip {{
+        background-color: {theme['surface']};
+        color: {theme['text']};
+        border: 1px solid {theme['border']};
+        border-radius: 8px;
+        padding: 8px 12px;
+        font-size: 12px;
+        font-weight: 500;
     }}
     """

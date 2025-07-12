@@ -118,9 +118,10 @@ class LoginWindow(QWidget):
         # Show PIN checkbox (only for setup)
         if not pin_exists():
             self.show_pin_cb = QCheckBox("Show PIN while typing")
-            self.show_pin_cb.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            checkbox_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
             self.show_pin_cb.toggled.connect(self.toggle_pin_visibility)
-            pin_section.addWidget(self.show_pin_cb)
+            checkbox_layout.addWidget(self.show_pin_cb)
+            pin_section.addLayout(checkbox_layout)
         
         panel_layout.addLayout(pin_section)
         

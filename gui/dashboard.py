@@ -2,14 +2,14 @@
 from PyQt6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
                             QLabel, QPushButton, QTextEdit, QLineEdit, 
                             QListWidget, QMessageBox, QSplitter, QFrame,
-                            QToolBar, QStatusBar, QMenuBar, QMenu, QFileDialog,
+                            QMenuBar, QFileDialog,
                             QListWidgetItem, QScrollArea, QGridLayout, QSpacerItem, QSizePolicy)
 from PyQt6.QtCore import Qt, QTimer, pyqtSignal, QPropertyAnimation, QEasingCurve, QSize
 from PyQt6.QtGui import QAction, QFont, QIcon
 from core.database import load_data, save_data, delete_note, export_vault, import_vault
 from core.settings import settings
 from assets.themes import get_modern_qss, COLORS
-from gui.animations import animator
+from gui.animations import ModernAnimator
 from datetime import datetime
 import os
 
@@ -17,6 +17,7 @@ class Dashboard(QMainWindow):
     def __init__(self, pin):
         super().__init__()
         self.pin = pin
+        self.animator = ModernAnimator()
         self.current_note_title = None
         self.is_modified = False
         self.notes = {}
@@ -39,7 +40,7 @@ class Dashboard(QMainWindow):
         
         # Center window and animate
         self.center_window()
-        animator.fade_in(self, 600)
+        self.animator.fade_in(self, 600)
     
     def setup_ui(self):
         """Setup modern glassmorphism dashboard UI"""
@@ -505,9 +506,6 @@ class Dashboard(QMainWindow):
                 self.update_ui_state()
                 self.update_word_count()
                 
-                # Animate note card
-                animator.slide_up(self.note_text)
-                
         except Exception as e:
             QMessageBox.warning(self, "Error", f"Failed to display note: {e}")
     
@@ -529,9 +527,6 @@ class Dashboard(QMainWindow):
         
         # Clear selection
         self.note_list.clearSelection()
-        
-        # Animate
-        animator.fade_in(self.note_title, 300)
         
         self.status_bar.showMessage("✨ New note created", 2000)
     
@@ -600,9 +595,6 @@ class Dashboard(QMainWindow):
             self.is_modified = False
             self.refresh_notes()
             self.update_ui_state()
-            
-            # Success animation
-            animator.pulse_success(self.save_btn)
             
             self.status_bar.showMessage(f"💾 '{title}' saved successfully", 3000)
             

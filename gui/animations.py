@@ -1,7 +1,6 @@
 """Modern animation system for Cryptex"""
 from PyQt6.QtCore import QPropertyAnimation, QEasingCurve, QTimer, pyqtSignal, QObject, QRect, QPoint
 from PyQt6.QtWidgets import QGraphicsOpacityEffect, QWidget, QGraphicsBlurEffect
-from PyQt6.QtGui import QPainter, QColor, QPen
 
 class ModernAnimator(QObject):
     """Modern animation manager with smooth effects"""
@@ -110,6 +109,3 @@ class ModernAnimator(QObject):
             return animation
         except Exception:
             return None
-
-# Global animator instance
-animator = ModernAnimator()

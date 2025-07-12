@@ -1,14 +1,14 @@
 """Modern glassmorphism login window for Cryptex"""
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
                             QLineEdit, QPushButton, QFrame, QCheckBox, 
-                            QApplication, QSpacerItem, QSizePolicy)
+                            QApplication, QMessageBox)
 from PyQt6.QtCore import Qt, QTimer, pyqtSignal
-from PyQt6.QtGui import QFont, QKeySequence, QShortcut, QPainter, QColor, QBrush
+from PyQt6.QtGui import QFont, QKeySequence, QShortcut
 import os
 from core.auth import check_pin, set_pin, pin_exists
 from gui.dashboard import Dashboard
 from assets.themes import get_modern_qss
-from gui.animations import animator
+from gui.animations import ModernAnimator
 
 class LoginWindow(QWidget):
     def __init__(self):
@@ -16,13 +16,13 @@ class LoginWindow(QWidget):
         self.pin = None
         self.failed_attempts = 0
         self.max_attempts = 5
+        self.animator = ModernAnimator()
         
         # Setup window
         self.setWindowTitle("Cryptex - Secure Vault")
         self.setFixedSize(500, 700)
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
-        self.setObjectName("login-window")
         
         # Apply modern theme
         self.setStyleSheet(get_modern_qss())
@@ -32,18 +32,24 @@ class LoginWindow(QWidget):
         self.setup_shortcuts()
         
         # Animate entrance
-        animator.fade_in(self, 800)
+        self.animator.fade_in(self, 800)
     
     def setup_ui(self):
         """Setup modern glassmorphism UI"""
         main_layout = QVBoxLayout()
-        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setContentsMargins(20, 20, 20, 20)
         
         # Main glass panel
         glass_panel = QFrame()
-        glass_panel.setObjectName("glass-panel")
+        glass_panel.setStyleSheet("""
+            QFrame {
+                background: rgba(26, 26, 46, 0.85);
+                border: 2px solid rgba(0, 207, 255, 0.3);
+                border-radius: 24px;
+                padding: 40px;
+            }
+        """)
         panel_layout = QVBoxLayout(glass_panel)
-        panel_layout.setContentsMargins(40, 40, 40, 40)
         panel_layout.setSpacing(30)
         
         # Header with close button
@@ -51,7 +57,23 @@ class LoginWindow(QWidget):
         header_layout.addStretch()
         
         close_btn = QPushButton("×")
-        close_btn.setObjectName("close-btn")
+        close_btn.setStyleSheet("""
+            QPushButton {
+                background: rgba(239, 68, 68, 0.8);
+                color: white;
+                border: none;
+                border-radius: 20px;
+                font-size: 18px;
+                font-weight: bold;
+                min-width: 40px;
+                min-height: 40px;
+                max-width: 40px;
+                max-height: 40px;
+            }
+            QPushButton:hover {
+                background: rgba(239, 68, 68, 1.0);
+            }
+        """)
         close_btn.clicked.connect(self.close)
         close_btn.setToolTip("Close Application")
         header_layout.addWidget(close_btn)
@@ -75,15 +97,25 @@ class LoginWindow(QWidget):
         
         # Title
         title = QLabel("CRYPTEX")
-        title.setObjectName("title")
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        title.setStyleSheet("""
+            font-size: 36px;
+            font-weight: 700;
+            color: #00CFFF;
+            margin: 20px 0;
+        """)
         branding_layout.addWidget(title)
         
         # Subtitle
         subtitle_text = "Create your PIN" if not pin_exists() else "Enter your PIN"
         subtitle = QLabel(subtitle_text)
-        subtitle.setObjectName("subtitle")
         subtitle.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        subtitle.setStyleSheet("""
+            font-size: 18px;
+            font-weight: 500;
+            color: #A1A1AA;
+            margin: 10px 0;
+        """)
         branding_layout.addWidget(subtitle)
         
         panel_layout.addLayout(branding_layout)
@@ -106,19 +138,55 @@ class LoginWindow(QWidget):
         
         # PIN input field
         self.pin_input = QLineEdit()
-        self.pin_input.setObjectName("pin-input")
         self.pin_input.setEchoMode(QLineEdit.EchoMode.Password)
         self.pin_input.setPlaceholderText("••••••")
         self.pin_input.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.pin_input.setMaxLength(6)
+        self.pin_input.setStyleSheet("""
+            QLineEdit {
+                background: rgba(26, 26, 46, 0.6);
+                border: 2px solid rgba(0, 207, 255, 0.4);
+                border-radius: 16px;
+                padding: 20px 24px;
+                font-size: 24px;
+                font-weight: 600;
+                color: white;
+                letter-spacing: 8px;
+            }
+            QLineEdit:focus {
+                border: 2px solid #00CFFF;
+                background: rgba(26, 26, 46, 0.9);
+            }
+        """)
         self.pin_input.returnPressed.connect(self.handle_login)
         self.pin_input.textChanged.connect(self.on_pin_changed)
         pin_section.addWidget(self.pin_input)
         
         # Show PIN checkbox (only for setup)
         if not pin_exists():
-            self.show_pin_cb = QCheckBox("Show PIN while typing")
+            checkbox_layout = QHBoxLayout()
             checkbox_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            
+            self.show_pin_cb = QCheckBox("Show PIN while typing")
+            self.show_pin_cb.setStyleSheet("""
+                QCheckBox {
+                    color: #A1A1AA;
+                    font-size: 14px;
+                    font-weight: 500;
+                    spacing: 12px;
+                }
+                QCheckBox::indicator {
+                    width: 20px;
+                    height: 20px;
+                    border: 2px solid rgba(0, 207, 255, 0.5);
+                    border-radius: 6px;
+                    background: rgba(26, 26, 46, 0.6);
+                }
+                QCheckBox::indicator:checked {
+                    background: #00CFFF;
+                    border: 2px solid #00CFFF;
+                }
+            """)
             self.show_pin_cb.toggled.connect(self.toggle_pin_visibility)
             checkbox_layout.addWidget(self.show_pin_cb)
             pin_section.addLayout(checkbox_layout)
@@ -128,7 +196,31 @@ class LoginWindow(QWidget):
         # Action button
         button_text = "🔐 Create Secure PIN" if not pin_exists() else "🔓 Unlock Vault"
         self.action_button = QPushButton(button_text)
-        self.action_button.setObjectName("primary")
+        self.action_button.setStyleSheet("""
+            QPushButton {
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #00CFFF, stop:1 #8B5CF6);
+                color: white;
+                border: none;
+                border-radius: 16px;
+                padding: 18px 32px;
+                font-size: 16px;
+                font-weight: 600;
+                min-height: 20px;
+            }
+            QPushButton:hover {
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(0, 207, 255, 0.9), stop:1 rgba(139, 92, 246, 0.9));
+            }
+            QPushButton:pressed {
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(0, 207, 255, 0.7), stop:1 rgba(139, 92, 246, 0.7));
+            }
+            QPushButton:disabled {
+                background: rgba(107, 114, 128, 0.5);
+                color: rgba(255, 255, 255, 0.5);
+            }
+        """)
         self.action_button.clicked.connect(self.handle_login)
         self.action_button.setEnabled(False)
         panel_layout.addWidget(self.action_button)
@@ -157,8 +249,12 @@ class LoginWindow(QWidget):
         
         for feature in features:
             label = QLabel(feature)
-            label.setObjectName("feature")
             label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            label.setStyleSheet("""
+                font-size: 14px;
+                color: #A1A1AA;
+                padding: 8px 0;
+            """)
             features_layout.addWidget(label)
         
         panel_layout.addLayout(features_layout)
@@ -232,60 +328,51 @@ class LoginWindow(QWidget):
             self.show_error("PIN must contain only digits")
             return
         
-        if pin_exists():
-            # Login mode
-            if check_pin(pin):
-                self.login_success(pin)
+        try:
+            if pin_exists():
+                # Login mode
+                if check_pin(pin):
+                    self.login_success(pin)
+                else:
+                    self.login_failed()
             else:
-                self.login_failed()
-        else:
-            # Setup mode
-            if len(pin) < 4:
-                self.show_error("PIN must be at least 4 digits long")
-                return
-            
-            if len(pin) > 6:
-                self.show_error("PIN must be at most 6 digits long")
-                return
-            
-            try:
+                # Setup mode
+                if len(pin) < 4:
+                    self.show_error("PIN must be at least 4 digits long")
+                    return
+                
+                if len(pin) > 6:
+                    self.show_error("PIN must be at most 6 digits long")
+                    return
+                
                 set_pin(pin)
                 self.show_success("PIN created successfully!")
                 QTimer.singleShot(1500, lambda: self.login_success(pin))
-            except Exception as e:
-                self.show_error(f"Failed to create PIN: {str(e)}")
+        except Exception as e:
+            self.show_error(f"Error: {str(e)}")
     
     def login_success(self, pin):
-        """Handle successful login with vault unlock animation"""
+        """Handle successful login"""
         self.pin = pin
         self.show_success("Access granted! Unlocking your secure vault...")
-        
-        # Pulse success animation
-        animator.pulse_success(self.action_button)
         
         def open_dashboard():
             try:
                 self.dashboard = Dashboard(pin)
                 self.dashboard.show()
-                
-                # Fade out login window
-                def close_login():
-                    self.close()
-                
-                QTimer.singleShot(300, close_login)
-                
+                self.close()
             except Exception as e:
                 self.show_error(f"Failed to open vault: {str(e)}")
         
         QTimer.singleShot(1200, open_dashboard)
     
     def login_failed(self):
-        """Handle failed login attempt with shake animation"""
+        """Handle failed login attempt"""
         self.failed_attempts += 1
         remaining = self.max_attempts - self.failed_attempts
         
         # Shake animation
-        animator.shake_error(self.pin_input)
+        self.animator.shake_error(self.pin_input)
         
         if remaining > 0:
             self.show_error(f"❌ Incorrect PIN! {remaining} attempts remaining")

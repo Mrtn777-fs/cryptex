@@ -1,3 +1,7 @@
+"""
+Cryptex - Modern Secure Note Manager
+A beautiful, encrypted note-taking application with glassmorphism design.
+"""
 import sys
 import os
 from gui.login import LoginWindow
@@ -5,7 +9,7 @@ from PyQt6.QtWidgets import QApplication
 from PyQt6.QtCore import Qt
 
 def setup_application():
-    """Setup application properties"""
+    """Setup application with modern styling"""
     app = QApplication(sys.argv)
     
     # Set application properties
@@ -14,7 +18,7 @@ def setup_application():
     app.setOrganizationName("Cryptex")
     app.setOrganizationDomain("cryptex.local")
     
-    # Set application style
+    # Use native styling as base
     app.setStyle('Fusion')
     
     return app

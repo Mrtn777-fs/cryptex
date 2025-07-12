@@ -1,27 +1,31 @@
 @echo off
-cd /d "%~dp0"
 title Cryptex - Secure Note Manager
 
-:: Hide the console window
+:: Hide console window after startup
 if not DEFINED IS_MINIMIZED set IS_MINIMIZED=1 && start "" /min "%~dpnx0" %* && exit
 
-:: Check if Python is installed
+:: Change to script directory
+cd /d "%~dp0"
+
+:: Check Python installation
 python --version >nul 2>&1
 if errorlevel 1 (
-    echo Python is not installed. Please install Python 3.10+ from https://python.org
+    echo Python not found. Please install Python 3.8+ from https://python.org
     pause
     exit /b 1
 )
 
 :: Install requirements silently
-python -m pip install -r requirements.txt >nul 2>&1
+echo Installing requirements...
+python -m pip install -r requirements.txt --quiet --disable-pip-version-check >nul 2>&1
 
-:: Start Cryptex
+:: Launch Cryptex
+echo Starting Cryptex...
 python main.py
 
-:: Keep window open only if there's an error
+:: Only pause if there was an error
 if errorlevel 1 (
     echo.
-    echo Application error occurred. Press any key to exit.
+    echo An error occurred. Press any key to exit.
     pause >nul
 )

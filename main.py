@@ -23,10 +23,6 @@ def main():
         font = QFont("Segoe UI", 10)
         app.setFont(font)
         
-        # Enable high DPI scaling
-        app.setAttribute(Qt.ApplicationAttribute.AA_EnableHighDpiScaling, True)
-        app.setAttribute(Qt.ApplicationAttribute.AA_UseHighDpiPixmaps, True)
-        
         # Import and create login window
         from gui.login import LoginWindow
         login_window = LoginWindow()

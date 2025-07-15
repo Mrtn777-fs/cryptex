@@ -226,7 +226,7 @@ class LoginWindow(QWidget):
             self.dashboard = Dashboard(pin)
             self.dashboard.show()
             
-            fade_animation.finished.connect(self.close)
+            self.close()
         except Exception as e:
             print(f"Dashboard creation error: {e}")
             self.show_error("Failed to open dashboard. Please restart the app.")

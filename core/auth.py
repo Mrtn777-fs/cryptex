@@ -4,6 +4,7 @@ from argon2 import PasswordHasher
 PIN_FILE = "data/pin.hash"
 
 def set_pin(pin):
+    """Set a new PIN"""
     try:
         os.makedirs("data", exist_ok=True)
         hasher = PasswordHasher()
@@ -20,3 +21,17 @@ def pin_exists():
     return os.path.exists(PIN_FILE)
 
 def check_pin(pin):
+    """Check if the provided PIN is correct"""
+    try:
+        if not pin_exists():
+            return False
+        
+        with open(PIN_FILE, "r") as f:
+            stored = f.read().strip()
+        
+        hasher = PasswordHasher()
+        hasher.verify(stored, pin)
+        return True
+    except Exception as e:
+        print(f"Error checking PIN: {e}")
+        return False

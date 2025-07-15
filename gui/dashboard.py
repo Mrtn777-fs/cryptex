@@ -1,16 +1,13 @@
 """
-Modern dashboard for Cryptex with smooth animations
+Clean dashboard for Cryptex
 """
 from PyQt6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
                             QLabel, QPushButton, QTextEdit, QLineEdit, 
-                            QListWidget, QMessageBox, QSplitter, QFrame,
-                            QFileDialog, QListWidgetItem, QStatusBar,
-                            QComboBox, QSpacerItem, QSizePolicy)
-from PyQt6.QtCore import Qt, QTimer
-from PyQt6.QtGui import QFont, QAction
+                            QListWidget, QMessageBox, QFrame,
+                            QFileDialog, QListWidgetItem, QComboBox)
+from PyQt6.QtCore import Qt
 from core.database import load_data, save_data, delete_note, export_vault, import_vault
 from assets.themes import THEMES, generate_qss
-from gui.animations import animator
 from core.settings import settings
 from datetime import datetime
 
@@ -22,146 +19,78 @@ class Dashboard(QMainWindow):
         self.notes = {}
         
         self.setWindowTitle("Cryptex - Secure Vault")
-        self.setMinimumSize(1200, 800)
-        self.resize(1400, 900)
+        self.setMinimumSize(1000, 700)
+        self.resize(1200, 800)
         
+        # Apply theme
+        current_theme = settings.get("theme", "cyber_blue")
         try:
-            # Apply theme
-            current_theme = settings.get("theme", "cyber_blue")
             self.setStyleSheet(generate_qss(current_theme))
         except Exception as e:
             print(f"Theme error: {e}")
-            # Fallback to basic dark theme
-            self.setStyleSheet("QWidget { background-color: #1e1e1e; color: white; }")
+            # Fallback theme
+            self.setStyleSheet("""
+                QMainWindow {
+                    background-color: #1a1a1a;
+                    color: white;
+                }
+                QPushButton {
+                    background-color: #00CFFF;
+                    color: white;
+                    border: none;
+                    border-radius: 6px;
+                    padding: 8px;
+                    font-weight: bold;
+                }
+                QPushButton:hover {
+                    background-color: #0099CC;
+                }
+                QLineEdit, QTextEdit {
+                    background-color: #2a2a2a;
+                    border: 1px solid #00CFFF;
+                    border-radius: 6px;
+                    padding: 8px;
+                    color: white;
+                }
+                QListWidget {
+                    background-color: #2a2a2a;
+                    border: 1px solid #00CFFF;
+                    border-radius: 6px;
+                }
+                QListWidget::item {
+                    padding: 8px;
+                    border-bottom: 1px solid #333;
+                }
+                QListWidget::item:selected {
+                    background-color: #00CFFF;
+                    color: white;
+                }
+            """)
         
         self.setup_ui()
-        try:
-            self.setup_ui()
-            self.refresh_notes()
-            self.center_window()
-        except Exception as e:
-            print(f"Dashboard setup error: {e}")
-        
-        # Start auto-save if enabled
-        if settings.get("auto_save", True):
-            interval = settings.get("auto_save_interval", 30) * 1000
-            self.auto_save_timer.start(interval)
-        
-        # Animate window appearance
-        animator.fade_in(self, 500)
+        self.refresh_notes()
+        self.center_window()
     
     def setup_ui(self):
-        """Setup the modern dashboard interface"""
+        """Setup the dashboard interface"""
         try:
             central_widget = QWidget()
             self.setCentralWidget(central_widget)
             
             layout = QHBoxLayout(central_widget)
-            layout.setContentsMargins(0, 0, 0, 0)
-            layout.setSpacing(0)
+            layout.setContentsMargins(10, 10, 10, 10)
+            layout.setSpacing(10)
             
-            # Create sidebar and main panel
-            self.create_sidebar(layout)
-            self.create_main_panel(layout)
-        except Exception as e:
-            print(f"UI setup error: {e}")
-        sidebar.setFixedWidth(300)
-        sidebar_layout = QVBoxLayout(sidebar)
-        sidebar_layout.setContentsMargins(20, 20, 20, 20)
-        sidebar_layout.setSpacing(20)
-        
-        # Header
-        header = QLabel("📝 Your Secure Notes")
-        header.setObjectName("Title")
-        header.setStyleSheet("font-size: 24px; font-weight: bold; margin-bottom: 10px;")
-        sidebar_layout.addWidget(header)
-        
-        # Theme selector
-        theme_layout = QHBoxLayout()
-        theme_layout.addWidget(QLabel("Theme:"))
-        
-        self.theme_combo = QComboBox()
-        for theme_key, theme_data in THEMES.items():
-            self.theme_combo.addItem(theme_data["name"], theme_key)
-        
-        # Set current theme
-        current_theme = settings.get("theme", "cyber_blue")
-        for i in range(self.theme_combo.count()):
-            if self.theme_combo.itemData(i) == current_theme:
-                self.theme_combo.setCurrentIndex(i)
-                break
-        
-        self.theme_combo.currentTextChanged.connect(self.on_theme_changed)
-        theme_layout.addWidget(self.theme_combo)
-        theme_layout.addStretch()
-        
-        sidebar_layout.addLayout(theme_layout)
-        
-        # New note button
-        new_btn = QPushButton("✨ New Note")
-        new_btn.setObjectName("PrimaryButton")
-        new_btn.clicked.connect(self.new_note)
-        sidebar_layout.addWidget(new_btn)
-        
-        # Notes list
-        self.note_list = QListWidget()
-        self.note_list.itemClicked.connect(self.display_note)
-        sidebar_layout.addWidget(self.note_list)
-        
-        # Action buttons
-        button_layout = QVBoxLayout()
-        button_layout.setSpacing(10)
-        
-        self.save_btn = QPushButton("💾 Save Note")
-        self.save_btn.setObjectName("PrimaryButton")
-        self.save_btn.clicked.connect(self.save_note)
-        self.save_btn.setEnabled(False)
-        button_layout.addWidget(self.save_btn)
-        
-        self.delete_btn = QPushButton("🗑️ Delete Note")
-        self.delete_btn.setObjectName("SecondaryButton")
-        self.delete_btn.clicked.connect(self.delete_note)
-        self.delete_btn.setEnabled(False)
-        self.delete_btn.setStyleSheet("""
-            QPushButton#SecondaryButton {
-                border-color: #ff4444;
-                color: #ff4444;
-            }
-            QPushButton#SecondaryButton:hover {
-                background-color: #ff4444;
-                color: white;
-            }
-        """)
-        button_layout.addWidget(self.delete_btn)
-        
-        sidebar_layout.addLayout(button_layout)
-        
-        # Export/Import buttons
-        io_layout = QHBoxLayout()
-        
-        export_btn = QPushButton("📤")
-        export_btn.setObjectName("SecondaryButton")
-        export_btn.setToolTip("Export Vault")
-        export_btn.clicked.connect(self.export_vault)
-        io_layout.addWidget(export_btn)
-        
-        try:
+            # Sidebar
             sidebar = QFrame()
-            sidebar.setFixedWidth(280)
-            sidebar.setStyleSheet("""
-                QFrame {
-                    background: rgba(30, 30, 30, 0.95);
-                    border-right: 2px solid rgba(0, 207, 255, 0.3);
-                }
-            """)
-            
+            sidebar.setFixedWidth(300)
             sidebar_layout = QVBoxLayout(sidebar)
-            sidebar_layout.setContentsMargins(20, 20, 20, 20)
-            sidebar_layout.setSpacing(20)
+            sidebar_layout.setContentsMargins(15, 15, 15, 15)
+            sidebar_layout.setSpacing(15)
             
             # Header
             header = QLabel("🔐 CRYPTEX")
-            header.setStyleSheet("font-size: 24px; font-weight: bold; color: #00CFFF; margin-bottom: 10px;")
+            header.setStyleSheet("font-size: 24px; font-weight: bold; color: #00CFFF;")
             sidebar_layout.addWidget(header)
             
             # Theme selector
@@ -184,95 +113,84 @@ class Dashboard(QMainWindow):
             
             # New note button
             new_btn = QPushButton("✨ New Note")
-            new_btn.setStyleSheet("""
-                QPushButton {
-                    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                        stop:0 #00CFFF, stop:1 #0099CC);
-                    color: white;
-                    border: none;
-                    border-radius: 8px;
-                    padding: 12px;
-                    font-weight: bold;
-                    font-size: 14px;
-                }
-                QPushButton:hover {
-                    background: #00CFFF;
-                }
-            """)
             new_btn.clicked.connect(self.new_note)
             sidebar_layout.addWidget(new_btn)
             
             # Notes list
             self.note_list = QListWidget()
-            self.note_list.setStyleSheet("""
-                QListWidget {
-                    background: rgba(40, 40, 40, 0.8);
-                    border: 1px solid rgba(0, 207, 255, 0.3);
-                    border-radius: 8px;
-                    padding: 5px;
-                }
-                QListWidget::item {
-                    background: rgba(50, 50, 50, 0.8);
-                    border: 1px solid rgba(0, 207, 255, 0.2);
-                    border-radius: 6px;
-                    padding: 10px;
-                    margin: 2px;
-                    color: white;
-                }
-                QListWidget::item:selected {
-                    background: rgba(0, 207, 255, 0.3);
-                    border-color: #00CFFF;
-                }
-                QListWidget::item:hover {
-                    background: rgba(0, 207, 255, 0.2);
-                }
-            """)
             self.note_list.itemClicked.connect(self.display_note)
             sidebar_layout.addWidget(self.note_list)
             
             # Action buttons
             self.save_btn = QPushButton("💾 Save")
-            self.save_btn.setStyleSheet("""
-                QPushButton {
-                    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                        stop:0 #00CFFF, stop:1 #0099CC);
-                    color: white;
-                    border: none;
-                    border-radius: 6px;
-                    padding: 8px;
-                    font-weight: bold;
-                }
-                QPushButton:hover { background: #00CFFF; }
-                QPushButton:disabled { background: #555; color: #999; }
-            """)
             self.save_btn.clicked.connect(self.save_note)
             self.save_btn.setEnabled(False)
             sidebar_layout.addWidget(self.save_btn)
             
             self.delete_btn = QPushButton("🗑️ Delete")
-            self.delete_btn.setStyleSheet("""
-                QPushButton {
-                    background: transparent;
-                    color: #ff4444;
-                    border: 2px solid #ff4444;
-                    border-radius: 6px;
-                    padding: 8px;
-                    font-weight: bold;
-                }
-                QPushButton:hover {
-                    background: #ff4444;
-                    color: white;
-                }
-                QPushButton:disabled { border-color: #555; color: #999; }
-            """)
             self.delete_btn.clicked.connect(self.delete_note)
             self.delete_btn.setEnabled(False)
             sidebar_layout.addWidget(self.delete_btn)
             
-            sidebar_layout.addStretch()
-            parent_layout.addWidget(sidebar)
+            # Export/Import buttons
+            io_layout = QHBoxLayout()
+            
+            export_btn = QPushButton("📤 Export")
+            export_btn.clicked.connect(self.export_vault)
+            io_layout.addWidget(export_btn)
+            
+            import_btn = QPushButton("📥 Import")
+            import_btn.clicked.connect(self.import_vault)
+            io_layout.addWidget(import_btn)
+            
+            sidebar_layout.addLayout(io_layout)
+            
+            layout.addWidget(sidebar)
+            
+            # Main panel
+            main_panel = QFrame()
+            main_layout = QVBoxLayout(main_panel)
+            main_layout.setContentsMargins(15, 15, 15, 15)
+            main_layout.setSpacing(15)
+            
+            # Note title
+            self.note_title = QLineEdit()
+            self.note_title.setPlaceholderText("Note title...")
+            self.note_title.textChanged.connect(self.on_text_changed)
+            main_layout.addWidget(self.note_title)
+            
+            # Note content
+            self.note_text = QTextEdit()
+            self.note_text.setPlaceholderText("Start writing your secure note...")
+            self.note_text.textChanged.connect(self.on_text_changed)
+            main_layout.addWidget(self.note_text)
+            
+            layout.addWidget(main_panel)
         except Exception as e:
-            print(f"Sidebar creation error: {e}")
+            print(f"UI setup error: {e}")
+    
+    def center_window(self):
+        """Center window on screen"""
+        try:
+            from PyQt6.QtWidgets import QApplication
+            screen = QApplication.primaryScreen().geometry()
+            size = self.geometry()
+            self.move(
+                (screen.width() - size.width()) // 2,
+                (screen.height() - size.height()) // 2
+            )
+        except Exception as e:
+            print(f"Window centering error: {e}")
+    
+    def on_theme_changed(self):
+        """Handle theme change"""
+        try:
+            theme_key = self.theme_combo.currentData()
+            if theme_key:
+                self.setStyleSheet(generate_qss(theme_key))
+                settings.set("theme", theme_key)
+        except Exception as e:
+            print(f"Theme change error: {e}")
     
     def refresh_notes(self):
         """Refresh the notes list"""
@@ -282,111 +200,63 @@ class Dashboard(QMainWindow):
             for title in sorted(self.notes.keys()):
                 item = QListWidgetItem(title)
                 self.note_list.addItem(item)
-                
-                # Animate item appearance
-                animator.fade_in(item.listWidget(), 200)
+            
+            # Update window title
+            count = len(self.notes)
+            if count > 0:
+                self.setWindowTitle(f"Cryptex - {count} notes")
+            else:
+                self.setWindowTitle("Cryptex - Secure Vault")
         except Exception as e:
             print(f"Error loading notes: {e}")
             self.notes = {}
-        try:
-            theme_key = self.theme_combo.currentData()
-            if theme_key:
-                self.setStyleSheet(generate_qss(theme_key))
-                settings.set("theme", theme_key)
-        except Exception as e:
-            print(f"Theme change error: {e}")
-            self.setWindowTitle(f"Cryptex - {count} notes")
-        else:
-            self.setWindowTitle("Cryptex - Secure Vault")
-        
-        self.status_bar.showMessage(f"{count} notes in vault")
     
     def display_note(self, item):
         """Display selected note"""
-        if not item:
-            return
-        
-        title = item.text()
-        if title in self.notes:
-            self.current_note_title = title
-            self.note_title.setText(title)
-            self.note_text.setText(self.notes[title])
-            self.delete_btn.setEnabled(True)
+        try:
+            if not item:
+                return
             
-            # Update word count
-            self.update_word_count()
-            
-            # Animate note loading
-            animator.pulse_widget(self.note_title)
+            title = item.text()
+            if title in self.notes:
+                self.current_note_title = title
+                self.note_title.setText(title)
+                self.note_text.setText(self.notes[title])
+                self.delete_btn.setEnabled(True)
+        except Exception as e:
+            print(f"Error displaying note: {e}")
     
     def new_note(self):
         """Create a new note"""
-        self.note_title.clear()
-        self.note_text.clear()
-        self.current_note_title = None
-        self.note_list.clearSelection()
-        self.delete_btn.setEnabled(False)
-        self.save_btn.setEnabled(False)
-        self.note_title.setFocus()
-        
-        # Update status
-        self.status_label.setText("New note")
-        self.update_word_count()
-        
-        # Animate new note
-        animator.pulse_widget(self.note_title)
+        try:
+            self.note_title.clear()
+            self.note_text.clear()
+            self.current_note_title = None
+            self.note_list.clearSelection()
+            self.delete_btn.setEnabled(False)
+            self.save_btn.setEnabled(False)
+            self.note_title.setFocus()
+        except Exception as e:
+            print(f"Error creating new note: {e}")
     
     def on_text_changed(self):
         """Handle text changes"""
-        has_title = bool(self.note_title.text().strip())
-        has_content = bool(self.note_text.toPlainText().strip())
-        
-        self.save_btn.setEnabled(has_title)
-        
-        # Update word count
-        self.update_word_count()
-        
-        # Update status
-        if has_title or has_content:
-            self.status_label.setText("Modified")
-        else:
-            self.status_label.setText("Ready")
-    
-    def update_word_count(self):
-        """Update word count display"""
-        content = self.note_text.toPlainText()
-        word_count = len(content.split()) if content.strip() else 0
-        char_count = len(content)
-        
-        self.word_count_label.setText(f"{word_count} words, {char_count} chars")
-    
-    def auto_save(self):
-        """Auto-save current note if enabled"""
-        if not settings.get("auto_save", True):
-            return
-        
-        title = self.note_title.text().strip()
-        content = self.note_text.toPlainText()
-        
-        if title and content and self.current_note_title == title:
-            try:
-                save_data(self.pin, title, content)
-                self.status_label.setText("Auto-saved")
-                QTimer.singleShot(2000, lambda: self.status_label.setText("Ready"))
-            except Exception as e:
-                print(f"Auto-save failed: {e}")
+        try:
+            has_title = bool(self.note_title.text().strip())
+            self.save_btn.setEnabled(has_title)
+        except Exception as e:
+            print(f"Error handling text change: {e}")
     
     def save_note(self):
         """Save current note"""
-        title = self.note_title.text().strip()
-        content = self.note_text.toPlainText()
-        
-        if not title:
-            QMessageBox.warning(self, "Error", "Please enter a note title.")
-            animator.shake_widget(self.note_title)
-            return
-        
         try:
+            title = self.note_title.text().strip()
+            content = self.note_text.toPlainText()
+            
+            if not title:
+                QMessageBox.warning(self, "Error", "Please enter a note title.")
+                return
+            
             save_data(self.pin, title, content)
             self.current_note_title = title
             self.refresh_notes()
@@ -398,24 +268,20 @@ class Dashboard(QMainWindow):
                     self.note_list.setCurrentRow(i)
                     break
             
-            # Success feedback
-            self.status_label.setText("Saved successfully")
-            self.status_bar.showMessage(f"Note '{title}' saved successfully", 3000)
-            animator.pulse_widget(self.save_btn)
-            
-            QTimer.singleShot(2000, lambda: self.status_label.setText("Ready"))
+            QMessageBox.information(self, "Success", f"Note '{title}' saved successfully!")
         except Exception as e:
+            print(f"Error saving note: {e}")
             QMessageBox.critical(self, "Error", f"Failed to save note: {e}")
     
     def delete_note(self):
         """Delete selected note"""
-        current_item = self.note_list.currentItem()
-        if not current_item:
-            return
-        
-        title = current_item.text()
-        
-        if settings.get("confirm_delete", True):
+        try:
+            current_item = self.note_list.currentItem()
+            if not current_item:
+                return
+            
+            title = current_item.text()
+            
             reply = QMessageBox.question(
                 self, "Delete Note",
                 f"Are you sure you want to delete '{title}'?\n\nThis action cannot be undone.",
@@ -425,8 +291,7 @@ class Dashboard(QMainWindow):
             
             if reply != QMessageBox.StandardButton.Yes:
                 return
-        
-        try:
+            
             delete_note(self.pin, title)
             self.note_title.clear()
             self.note_text.clear()
@@ -435,82 +300,68 @@ class Dashboard(QMainWindow):
             self.delete_btn.setEnabled(False)
             self.save_btn.setEnabled(False)
             
-            # Success feedback
-            self.status_label.setText("Note deleted")
-            self.status_bar.showMessage(f"Note '{title}' deleted", 3000)
-            self.update_word_count()
-            
-            QTimer.singleShot(2000, lambda: self.status_label.setText("Ready"))
+            QMessageBox.information(self, "Success", f"Note '{title}' deleted successfully!")
         except Exception as e:
+            print(f"Error deleting note: {e}")
             QMessageBox.critical(self, "Error", f"Failed to delete note: {e}")
     
     def export_vault(self):
         """Export vault to file"""
-        default_name = f"cryptex_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.enc"
-        path, _ = QFileDialog.getSaveFileName(
-            self, "Export Vault", default_name,
-            "Cryptex Vault (*.enc);;All Files (*)"
-        )
-        if path:
-            try:
+        try:
+            default_name = f"cryptex_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.enc"
+            path, _ = QFileDialog.getSaveFileName(
+                self, "Export Vault", default_name,
+                "Cryptex Vault (*.enc);;All Files (*)"
+            )
+            if path:
                 export_vault(path)
                 QMessageBox.information(self, "Success", f"Vault exported successfully to:\n{path}")
-                self.status_bar.showMessage("Vault exported successfully", 3000)
-            except Exception as e:
-                QMessageBox.critical(self, "Error", f"Failed to export vault: {e}")
+        except Exception as e:
+            print(f"Error exporting vault: {e}")
+            QMessageBox.critical(self, "Error", f"Failed to export vault: {e}")
     
     def import_vault(self):
         """Import vault from file"""
-        path, _ = QFileDialog.getOpenFileName(
-            self, "Import Vault", "",
-            "Cryptex Vault (*.enc);;All Files (*)"
-        )
-        if path:
-            reply = QMessageBox.question(
-                self, "Confirm Import",
-                "Importing will replace your current vault.\n"
-                "Make sure you have a backup!\n\n"
-                "Continue?",
-                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-                QMessageBox.StandardButton.No
+        try:
+            path, _ = QFileDialog.getOpenFileName(
+                self, "Import Vault", "",
+                "Cryptex Vault (*.enc);;All Files (*)"
             )
-            
-            if reply == QMessageBox.StandardButton.Yes:
-                try:
+            if path:
+                reply = QMessageBox.question(
+                    self, "Confirm Import",
+                    "Importing will replace your current vault.\n"
+                    "Make sure you have a backup!\n\n"
+                    "Continue?",
+                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                    QMessageBox.StandardButton.No
+                )
+                
+                if reply == QMessageBox.StandardButton.Yes:
                     import_vault(path)
                     self.refresh_notes()
-                    self.new_note()  # Clear current note
+                    self.new_note()
                     QMessageBox.information(self, "Success", "Vault imported successfully!")
-                    self.status_bar.showMessage("Vault imported successfully", 3000)
-                except Exception as e:
-                    QMessageBox.critical(self, "Error", f"Failed to import vault: {e}")
+        except Exception as e:
+            print(f"Error importing vault: {e}")
+            QMessageBox.critical(self, "Error", f"Failed to import vault: {e}")
     
     def keyPressEvent(self, event):
         """Handle key press events"""
-        if event.key() == Qt.Key.Key_Escape:
-            self.close()
-        elif event.modifiers() == Qt.KeyboardModifier.ControlModifier:
-            if event.key() == Qt.Key.Key_N:
-                self.new_note()
-            elif event.key() == Qt.Key.Key_S:
-                self.save_note()
-            elif event.key() == Qt.Key.Key_Q:
+        try:
+            if event.key() == Qt.Key.Key_Escape:
                 self.close()
-        super().keyPressEvent(event)
+            elif event.modifiers() == Qt.KeyboardModifier.ControlModifier:
+                if event.key() == Qt.Key.Key_N:
+                    self.new_note()
+                elif event.key() == Qt.Key.Key_S:
+                    self.save_note()
+                elif event.key() == Qt.Key.Key_Q:
+                    self.close()
+            super().keyPressEvent(event)
+        except Exception as e:
+            print(f"Key press error: {e}")
     
     def closeEvent(self, event):
         """Handle close event"""
-        # Optional backup on exit
-        if settings.get("backup_on_exit", False):
-            try:
-                backup_name = f"data/auto_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.enc"
-                export_vault(backup_name)
-            except Exception as e:
-                print(f"Auto-backup failed: {e}")
-        
-        # Fade out animation
-        fade_animation = animator.fade_out(self, 300)
-        fade_animation.finished.connect(lambda: event.accept())
-        
-        # Force close after animation timeout
-        QTimer.singleShot(400, lambda: event.accept())
+        event.accept()

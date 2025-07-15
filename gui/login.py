@@ -1,99 +1,93 @@
-"""Simple, clean login window that actually works"""
+"""
+Modern, clean login window for Cryptex
+"""
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
-                            QLineEdit, QPushButton, QFrame, QApplication)
-from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QFont
+                            QLineEdit, QPushButton, QFrame, QApplication,
+                            QComboBox, QSpacerItem, QSizePolicy)
+from PyQt6.QtCore import Qt, QTimer
+from PyQt6.QtGui import QFont, QPixmap, QPainter, QColor
 import os
 from core.auth import check_pin, set_pin, pin_exists
+from assets.themes import THEMES, generate_qss
+from gui.animations import animator
+from core.settings import settings
 
 class LoginWindow(QWidget):
     def __init__(self):
         super().__init__()
+        self.setObjectName("LoginWindow")
         self.setWindowTitle("Cryptex - Secure Vault")
-        self.setFixedSize(400, 500)
+        self.setFixedSize(500, 700)
+        self.setWindowFlags(Qt.WindowType.FramelessWindowHint)
         
-        # Simple dark theme
-        self.setStyleSheet("""
-            QWidget {
-                background-color: #1a1a1a;
-                color: #ffffff;
-                font-family: 'Segoe UI', Arial, sans-serif;
-            }
-            QFrame {
-                background-color: #2a2a2a;
-                border: 1px solid #00CFFF;
-                border-radius: 16px;
-                padding: 30px;
-            }
-            QLabel {
-                color: #00CFFF;
-                font-weight: bold;
-            }
-            QLineEdit {
-                background-color: #333333;
-                border: 2px solid #00CFFF;
-                border-radius: 8px;
-                padding: 15px;
-                font-size: 18px;
-                color: white;
-            }
-            QLineEdit:focus {
-                border-color: #66D9FF;
-            }
-            QPushButton {
-                background-color: #00CFFF;
-                color: #1a1a1a;
-                border: none;
-                border-radius: 8px;
-                padding: 15px;
-                font-size: 16px;
-                font-weight: bold;
-            }
-            QPushButton:hover {
-                background-color: #66D9FF;
-            }
-            QPushButton:pressed {
-                background-color: #0099CC;
-            }
-        """)
+        # Load theme
+        current_theme = settings.get("theme", "cyber_blue")
+        self.apply_theme(current_theme)
         
         self.setup_ui()
         self.center_window()
+        
+        # Animate window appearance
+        animator.fade_in(self, 400)
+    
+    def apply_theme(self, theme_name):
+        """Apply the selected theme"""
+        self.setStyleSheet(generate_qss(theme_name))
+        settings.set("theme", theme_name)
     
     def setup_ui(self):
-        """Setup simple, clean UI"""
+        """Setup the beautiful login interface"""
         main_layout = QVBoxLayout()
         main_layout.setContentsMargins(40, 40, 40, 40)
+        main_layout.setSpacing(0)
+        
+        # Close button
+        close_layout = QHBoxLayout()
+        close_layout.addStretch()
+        
+        close_btn = QPushButton("✕")
+        close_btn.setObjectName("SecondaryButton")
+        close_btn.setFixedSize(40, 40)
+        close_btn.clicked.connect(self.close)
+        close_layout.addWidget(close_btn)
+        
+        main_layout.addLayout(close_layout)
+        main_layout.addSpacing(20)
         
         # Main card
         card = QFrame()
+        card.setObjectName("MainCard")
         card_layout = QVBoxLayout(card)
-        card_layout.setSpacing(25)
+        card_layout.setSpacing(30)
+        card_layout.setContentsMargins(40, 40, 40, 40)
         
         # Title
         title = QLabel("🔐 CRYPTEX")
+        title.setObjectName("Title")
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        title.setStyleSheet("font-size: 32px; font-weight: bold; color: #00CFFF; margin-bottom: 20px;")
         card_layout.addWidget(title)
         
         # Subtitle
         if pin_exists():
-            subtitle_text = "Enter your PIN to unlock"
+            subtitle_text = "Enter your PIN to unlock your secure vault"
         else:
-            subtitle_text = "Create a secure PIN (4-6 digits)"
+            subtitle_text = "Create a secure PIN to protect your vault"
         
         subtitle = QLabel(subtitle_text)
+        subtitle.setObjectName("Subtitle")
         subtitle.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        subtitle.setStyleSheet("font-size: 16px; color: #cccccc; margin-bottom: 20px;")
+        subtitle.setWordWrap(True)
         card_layout.addWidget(subtitle)
         
         # PIN input
         self.pin_input = QLineEdit()
+        self.pin_input.setObjectName("PinInput")
         self.pin_input.setEchoMode(QLineEdit.EchoMode.Password)
         self.pin_input.setPlaceholderText("Enter PIN...")
         self.pin_input.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.pin_input.setMaxLength(6)
         self.pin_input.returnPressed.connect(self.handle_pin)
+        self.pin_input.textChanged.connect(self.on_pin_changed)
         card_layout.addWidget(self.pin_input)
         
         # Button
@@ -103,16 +97,42 @@ class LoginWindow(QWidget):
             button_text = "🔐 Create PIN"
         
         self.submit_btn = QPushButton(button_text)
+        self.submit_btn.setObjectName("PrimaryButton")
         self.submit_btn.clicked.connect(self.handle_pin)
+        self.submit_btn.setEnabled(False)
         card_layout.addWidget(self.submit_btn)
         
+        # Theme selector
+        theme_layout = QHBoxLayout()
+        theme_layout.addWidget(QLabel("Theme:"))
+        
+        self.theme_combo = QComboBox()
+        for theme_key, theme_data in THEMES.items():
+            self.theme_combo.addItem(theme_data["name"], theme_key)
+        
+        # Set current theme
+        current_theme = settings.get("theme", "cyber_blue")
+        for i in range(self.theme_combo.count()):
+            if self.theme_combo.itemData(i) == current_theme:
+                self.theme_combo.setCurrentIndex(i)
+                break
+        
+        self.theme_combo.currentTextChanged.connect(self.on_theme_changed)
+        theme_layout.addWidget(self.theme_combo)
+        theme_layout.addStretch()
+        
+        card_layout.addLayout(theme_layout)
+        
         # Security info
-        info = QLabel("🛡️ Your data is encrypted with military-grade security")
+        info = QLabel("🛡️ Military-grade encryption • 🔒 Offline storage • 🚫 No data collection")
+        info.setObjectName("InfoLabel")
         info.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        info.setStyleSheet("font-size: 12px; color: #888888; margin-top: 20px;")
+        info.setWordWrap(True)
         card_layout.addWidget(info)
         
         main_layout.addWidget(card)
+        main_layout.addStretch()
+        
         self.setLayout(main_layout)
         
         # Focus PIN input
@@ -126,6 +146,36 @@ class LoginWindow(QWidget):
             (screen.width() - size.width()) // 2,
             (screen.height() - size.height()) // 2
         )
+    
+    def on_pin_changed(self):
+        """Handle PIN input changes"""
+        pin = self.pin_input.text().strip()
+        
+        # Only allow digits
+        if pin and not pin.isdigit():
+            # Remove non-digit characters
+            clean_pin = ''.join(c for c in pin if c.isdigit())
+            self.pin_input.setText(clean_pin)
+            return
+        
+        # Enable button if PIN has minimum length
+        min_length = 4 if not pin_exists() else 1
+        self.submit_btn.setEnabled(len(pin) >= min_length)
+        
+        # Visual feedback for PIN length
+        if not pin_exists() and len(pin) > 0:
+            if len(pin) < 4:
+                self.pin_input.setObjectName("ErrorInput")
+            else:
+                self.pin_input.setObjectName("PinInput")
+            self.pin_input.setStyleSheet(self.styleSheet())
+    
+    def on_theme_changed(self):
+        """Handle theme change"""
+        theme_key = self.theme_combo.currentData()
+        if theme_key:
+            self.apply_theme(theme_key)
+            animator.pulse_widget(self.theme_combo)
     
     def handle_pin(self):
         """Handle PIN creation or login"""
@@ -163,47 +213,45 @@ class LoginWindow(QWidget):
     def login_success(self, pin):
         """Handle successful login"""
         try:
+            # Success animation
+            animator.pulse_widget(self.submit_btn)
+            
+            # Small delay for animation
+            QTimer.singleShot(200, lambda: self.open_dashboard(pin))
+        except Exception as e:
+            self.show_error(f"Failed to open dashboard: {str(e)}")
+    
+    def open_dashboard(self, pin):
+        """Open the dashboard"""
+        try:
             from gui.dashboard import Dashboard
             self.dashboard = Dashboard(pin)
             self.dashboard.show()
-            self.close()
+            
+            # Fade out login window
+            fade_animation = animator.fade_out(self, 300)
+            fade_animation.finished.connect(self.close)
         except Exception as e:
             self.show_error(f"Failed to open dashboard: {str(e)}")
     
     def show_error(self, message):
-        """Show error message"""
-        self.pin_input.setStyleSheet("""
-            QLineEdit {
-                background-color: #333333;
-                border: 2px solid #ff4444;
-                border-radius: 8px;
-                padding: 15px;
-                font-size: 18px;
-                color: white;
-            }
-        """)
+        """Show error message with animation"""
+        # Change input style to error
+        self.pin_input.setObjectName("ErrorInput")
+        self.pin_input.setStyleSheet(self.styleSheet())
         self.pin_input.setPlaceholderText(message)
         self.pin_input.clear()
         
+        # Shake animation
+        animator.shake_widget(self.pin_input)
+        
         # Reset style after 3 seconds
-        from PyQt6.QtCore import QTimer
         QTimer.singleShot(3000, self.reset_input_style)
     
     def reset_input_style(self):
         """Reset input style to normal"""
-        self.pin_input.setStyleSheet("""
-            QLineEdit {
-                background-color: #333333;
-                border: 2px solid #00CFFF;
-                border-radius: 8px;
-                padding: 15px;
-                font-size: 18px;
-                color: white;
-            }
-            QLineEdit:focus {
-                border-color: #66D9FF;
-            }
-        """)
+        self.pin_input.setObjectName("PinInput")
+        self.pin_input.setStyleSheet(self.styleSheet())
         self.pin_input.setPlaceholderText("Enter PIN...")
     
     def keyPressEvent(self, event):

@@ -1,11 +1,12 @@
 """
-Cryptex - Simple, Secure Note Manager
-Clean, functional, and actually works.
+Cryptex - Modern Secure Note Manager
+Beautiful, encrypted, and actually works perfectly.
 """
 import sys
 import os
 from PyQt6.QtWidgets import QApplication
 from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QFont
 
 def main():
     """Main application entry point"""
@@ -16,7 +17,15 @@ def main():
         # Create application
         app = QApplication(sys.argv)
         app.setApplicationName("Cryptex")
-        app.setApplicationVersion("2.0")
+        app.setApplicationVersion("3.0")
+        
+        # Set application font
+        font = QFont("Segoe UI", 10)
+        app.setFont(font)
+        
+        # Enable high DPI scaling
+        app.setAttribute(Qt.ApplicationAttribute.AA_EnableHighDpiScaling, True)
+        app.setAttribute(Qt.ApplicationAttribute.AA_UseHighDpiPixmaps, True)
         
         # Import and create login window
         from gui.login import LoginWindow
@@ -28,6 +37,8 @@ def main():
         
     except Exception as e:
         print(f"Application error: {e}")
+        import traceback
+        traceback.print_exc()
         return 1
 
 if __name__ == "__main__":

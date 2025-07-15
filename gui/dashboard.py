@@ -20,21 +20,27 @@ class Dashboard(QMainWindow):
         self.pin = pin
         self.current_note_title = None
         self.notes = {}
-        self.auto_save_timer = QTimer()
-        self.auto_save_timer.timeout.connect(self.auto_save)
         
         self.setWindowTitle("Cryptex - Secure Vault")
         self.setMinimumSize(1200, 800)
         self.resize(1400, 900)
         
-        # Apply theme
-        current_theme = settings.get("theme", "cyber_blue")
-        self.setStyleSheet(generate_qss(current_theme))
+        try:
+            # Apply theme
+            current_theme = settings.get("theme", "cyber_blue")
+            self.setStyleSheet(generate_qss(current_theme))
+        except Exception as e:
+            print(f"Theme error: {e}")
+            # Fallback to basic dark theme
+            self.setStyleSheet("QWidget { background-color: #1e1e1e; color: white; }")
         
         self.setup_ui()
-        self.setup_menu()
-        self.refresh_notes()
-        self.center_window()
+        try:
+            self.setup_ui()
+            self.refresh_notes()
+            self.center_window()
+        except Exception as e:
+            print(f"Dashboard setup error: {e}")
         
         # Start auto-save if enabled
         if settings.get("auto_save", True):
@@ -46,16 +52,19 @@ class Dashboard(QMainWindow):
     
     def setup_ui(self):
         """Setup the modern dashboard interface"""
-        central_widget = QWidget()
-        self.setCentralWidget(central_widget)
-        
-        layout = QHBoxLayout(central_widget)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(0)
-        
-        # Left sidebar
-        sidebar = QFrame()
-        sidebar.setObjectName("Sidebar")
+        try:
+            central_widget = QWidget()
+            self.setCentralWidget(central_widget)
+            
+            layout = QHBoxLayout(central_widget)
+            layout.setContentsMargins(0, 0, 0, 0)
+            layout.setSpacing(0)
+            
+            # Create sidebar and main panel
+            self.create_sidebar(layout)
+            self.create_main_panel(layout)
+        except Exception as e:
+            print(f"UI setup error: {e}")
         sidebar.setFixedWidth(300)
         sidebar_layout = QVBoxLayout(sidebar)
         sidebar_layout.setContentsMargins(20, 20, 20, 20)
@@ -136,136 +145,139 @@ class Dashboard(QMainWindow):
         export_btn.clicked.connect(self.export_vault)
         io_layout.addWidget(export_btn)
         
-        import_btn = QPushButton("📥")
-        import_btn.setObjectName("SecondaryButton")
-        import_btn.setToolTip("Import Vault")
-        import_btn.clicked.connect(self.import_vault)
-        io_layout.addWidget(import_btn)
-        
-        sidebar_layout.addLayout(io_layout)
-        
-        layout.addWidget(sidebar)
-        
-        # Main panel
-        main_panel = QFrame()
-        main_panel.setObjectName("MainPanel")
-        main_layout = QVBoxLayout(main_panel)
-        main_layout.setContentsMargins(30, 30, 30, 30)
-        main_layout.setSpacing(20)
-        
-        # Title input
-        title_layout = QHBoxLayout()
-        title_layout.addWidget(QLabel("Title:"))
-        
-        self.note_title = QLineEdit()
-        self.note_title.setPlaceholderText("Enter note title...")
-        self.note_title.textChanged.connect(self.on_text_changed)
-        title_layout.addWidget(self.note_title)
-        
-        # Word count label
-        self.word_count_label = QLabel("0 words")
-        self.word_count_label.setObjectName("InfoLabel")
-        title_layout.addWidget(self.word_count_label)
-        
-        main_layout.addLayout(title_layout)
-        
-        # Content editor
-        content_label = QLabel("Content:")
-        content_label.setStyleSheet("font-weight: bold; font-size: 16px;")
-        main_layout.addWidget(content_label)
-        
-        self.note_text = QTextEdit()
-        self.note_text.setPlaceholderText("Start writing your secure note here...\n\nYour notes are encrypted and stored locally for maximum security.")
-        self.note_text.textChanged.connect(self.on_text_changed)
-        main_layout.addWidget(self.note_text)
-        
-        # Status info
-        self.status_label = QLabel("Ready")
-        self.status_label.setObjectName("InfoLabel")
-        main_layout.addWidget(self.status_label)
-        
-        layout.addWidget(main_panel)
-        
-        # Status bar
-        self.status_bar = QStatusBar()
-        self.setStatusBar(self.status_bar)
-        self.status_bar.showMessage("Ready")
-    
-    def setup_menu(self):
-        """Setup menu bar"""
-        menubar = self.menuBar()
-        
-        # File menu
-        file_menu = menubar.addMenu("File")
-        
-        new_action = QAction("New Note", self)
-        new_action.setShortcut("Ctrl+N")
-        new_action.triggered.connect(self.new_note)
-        file_menu.addAction(new_action)
-        
-        save_action = QAction("Save Note", self)
-        save_action.setShortcut("Ctrl+S")
-        save_action.triggered.connect(self.save_note)
-        file_menu.addAction(save_action)
-        
-        file_menu.addSeparator()
-        
-        export_action = QAction("Export Vault", self)
-        export_action.triggered.connect(self.export_vault)
-        file_menu.addAction(export_action)
-        
-        import_action = QAction("Import Vault", self)
-        import_action.triggered.connect(self.import_vault)
-        file_menu.addAction(import_action)
-        
-        file_menu.addSeparator()
-        
-        exit_action = QAction("Exit", self)
-        exit_action.setShortcut("Ctrl+Q")
-        exit_action.triggered.connect(self.close)
-        file_menu.addAction(exit_action)
-        
-        # View menu
-        view_menu = menubar.addMenu("View")
-        
-        for theme_key, theme_data in THEMES.items():
-            theme_action = QAction(theme_data["name"], self)
-            theme_action.triggered.connect(lambda checked, t=theme_key: self.apply_theme(t))
-            view_menu.addAction(theme_action)
-    
-    def center_window(self):
-        """Center window on screen"""
-        from PyQt6.QtWidgets import QApplication
-        screen = QApplication.primaryScreen().geometry()
-        size = self.geometry()
-        self.move(
-            (screen.width() - size.width()) // 2,
-            (screen.height() - size.height()) // 2
-        )
-    
-    def apply_theme(self, theme_name):
-        """Apply the selected theme"""
-        self.setStyleSheet(generate_qss(theme_name))
-        settings.set("theme", theme_name)
-        
-        # Update combo box
-        for i in range(self.theme_combo.count()):
-            if self.theme_combo.itemData(i) == theme_name:
-                self.theme_combo.setCurrentIndex(i)
-                break
-        
-        animator.pulse_widget(self.theme_combo)
-    
-    def on_theme_changed(self):
-        """Handle theme change"""
-        theme_key = self.theme_combo.currentData()
-        if theme_key:
-            self.apply_theme(theme_key)
+        try:
+            sidebar = QFrame()
+            sidebar.setFixedWidth(280)
+            sidebar.setStyleSheet("""
+                QFrame {
+                    background: rgba(30, 30, 30, 0.95);
+                    border-right: 2px solid rgba(0, 207, 255, 0.3);
+                }
+            """)
+            
+            sidebar_layout = QVBoxLayout(sidebar)
+            sidebar_layout.setContentsMargins(20, 20, 20, 20)
+            sidebar_layout.setSpacing(20)
+            
+            # Header
+            header = QLabel("🔐 CRYPTEX")
+            header.setStyleSheet("font-size: 24px; font-weight: bold; color: #00CFFF; margin-bottom: 10px;")
+            sidebar_layout.addWidget(header)
+            
+            # Theme selector
+            theme_layout = QHBoxLayout()
+            theme_layout.addWidget(QLabel("Theme:"))
+            
+            self.theme_combo = QComboBox()
+            for theme_key, theme_data in THEMES.items():
+                self.theme_combo.addItem(theme_data["name"], theme_key)
+            
+            current_theme = settings.get("theme", "cyber_blue")
+            for i in range(self.theme_combo.count()):
+                if self.theme_combo.itemData(i) == current_theme:
+                    self.theme_combo.setCurrentIndex(i)
+                    break
+            
+            self.theme_combo.currentTextChanged.connect(self.on_theme_changed)
+            theme_layout.addWidget(self.theme_combo)
+            sidebar_layout.addLayout(theme_layout)
+            
+            # New note button
+            new_btn = QPushButton("✨ New Note")
+            new_btn.setStyleSheet("""
+                QPushButton {
+                    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                        stop:0 #00CFFF, stop:1 #0099CC);
+                    color: white;
+                    border: none;
+                    border-radius: 8px;
+                    padding: 12px;
+                    font-weight: bold;
+                    font-size: 14px;
+                }
+                QPushButton:hover {
+                    background: #00CFFF;
+                }
+            """)
+            new_btn.clicked.connect(self.new_note)
+            sidebar_layout.addWidget(new_btn)
+            
+            # Notes list
+            self.note_list = QListWidget()
+            self.note_list.setStyleSheet("""
+                QListWidget {
+                    background: rgba(40, 40, 40, 0.8);
+                    border: 1px solid rgba(0, 207, 255, 0.3);
+                    border-radius: 8px;
+                    padding: 5px;
+                }
+                QListWidget::item {
+                    background: rgba(50, 50, 50, 0.8);
+                    border: 1px solid rgba(0, 207, 255, 0.2);
+                    border-radius: 6px;
+                    padding: 10px;
+                    margin: 2px;
+                    color: white;
+                }
+                QListWidget::item:selected {
+                    background: rgba(0, 207, 255, 0.3);
+                    border-color: #00CFFF;
+                }
+                QListWidget::item:hover {
+                    background: rgba(0, 207, 255, 0.2);
+                }
+            """)
+            self.note_list.itemClicked.connect(self.display_note)
+            sidebar_layout.addWidget(self.note_list)
+            
+            # Action buttons
+            self.save_btn = QPushButton("💾 Save")
+            self.save_btn.setStyleSheet("""
+                QPushButton {
+                    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                        stop:0 #00CFFF, stop:1 #0099CC);
+                    color: white;
+                    border: none;
+                    border-radius: 6px;
+                    padding: 8px;
+                    font-weight: bold;
+                }
+                QPushButton:hover { background: #00CFFF; }
+                QPushButton:disabled { background: #555; color: #999; }
+            """)
+            self.save_btn.clicked.connect(self.save_note)
+            self.save_btn.setEnabled(False)
+            sidebar_layout.addWidget(self.save_btn)
+            
+            self.delete_btn = QPushButton("🗑️ Delete")
+            self.delete_btn.setStyleSheet("""
+                QPushButton {
+                    background: transparent;
+                    color: #ff4444;
+                    border: 2px solid #ff4444;
+                    border-radius: 6px;
+                    padding: 8px;
+                    font-weight: bold;
+                }
+                QPushButton:hover {
+                    background: #ff4444;
+                    color: white;
+                }
+                QPushButton:disabled { border-color: #555; color: #999; }
+            """)
+            self.delete_btn.clicked.connect(self.delete_note)
+            self.delete_btn.setEnabled(False)
+            sidebar_layout.addWidget(self.delete_btn)
+            
+            sidebar_layout.addStretch()
+            parent_layout.addWidget(sidebar)
+        except Exception as e:
+            print(f"Sidebar creation error: {e}")
     
     def refresh_notes(self):
         """Refresh the notes list"""
-        self.note_list.clear()
         try:
+            self.note_list.clear()
             self.notes = load_data(self.pin)
             for title in sorted(self.notes.keys()):
                 item = QListWidgetItem(title)
@@ -276,10 +288,13 @@ class Dashboard(QMainWindow):
         except Exception as e:
             print(f"Error loading notes: {e}")
             self.notes = {}
-        
-        # Update window title and status
-        count = len(self.notes)
-        if settings.get("show_note_count", True):
+        try:
+            theme_key = self.theme_combo.currentData()
+            if theme_key:
+                self.setStyleSheet(generate_qss(theme_key))
+                settings.set("theme", theme_key)
+        except Exception as e:
+            print(f"Theme change error: {e}")
             self.setWindowTitle(f"Cryptex - {count} notes")
         else:
             self.setWindowTitle("Cryptex - Secure Vault")
@@ -485,9 +500,6 @@ class Dashboard(QMainWindow):
     
     def closeEvent(self, event):
         """Handle close event"""
-        # Stop auto-save timer
-        self.auto_save_timer.stop()
-        
         # Optional backup on exit
         if settings.get("backup_on_exit", False):
             try:

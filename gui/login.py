@@ -193,7 +193,9 @@ class LoginWindow(QWidget):
             if pin_exists():
                 # Login
                 if check_pin(pin):
-                    self.login_success(pin)
+                    # Success animation
+                    self.submit_btn.setText("✅ Success!")
+                    QTimer.singleShot(500, lambda: self.open_dashboard(pin))
                 else:
                     self.show_error("Incorrect PIN")
             else:
@@ -206,20 +208,16 @@ class LoginWindow(QWidget):
                     return
                 
                 set_pin(pin)
-                self.login_success(pin)
+                # Success animation
+                self.submit_btn.setText("✅ PIN Created!")
+                QTimer.singleShot(500, lambda: self.open_dashboard(pin))
         except Exception as e:
             self.show_error(f"Error: {str(e)}")
     
     def login_success(self, pin):
         """Handle successful login"""
-        try:
-            # Success animation
-            animator.pulse_widget(self.submit_btn)
-            
-            # Small delay for animation
-            QTimer.singleShot(200, lambda: self.open_dashboard(pin))
-        except Exception as e:
-            self.show_error(f"Failed to open dashboard: {str(e)}")
+            print(f"PIN handling error: {e}")
+            self.show_error("An error occurred. Please try again.")
     
     def open_dashboard(self, pin):
         """Open the dashboard"""
@@ -228,11 +226,10 @@ class LoginWindow(QWidget):
             self.dashboard = Dashboard(pin)
             self.dashboard.show()
             
-            # Fade out login window
-            fade_animation = animator.fade_out(self, 300)
             fade_animation.finished.connect(self.close)
         except Exception as e:
-            self.show_error(f"Failed to open dashboard: {str(e)}")
+            print(f"Dashboard creation error: {e}")
+            self.show_error("Failed to open dashboard. Please restart the app.")
     
     def show_error(self, message):
         """Show error message with animation"""
